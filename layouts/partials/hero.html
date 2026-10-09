@@ -12,6 +12,7 @@
         <button type="button" data-mode="vortices" aria-pressed="true"><span class="swatch swatch-qf" aria-hidden="true"></span>Point vortices</button>
         <button type="button" data-mode="forest" aria-pressed="false"><span class="swatch swatch-bio" aria-hidden="true"></span>Tree disease</button>
         <button type="button" data-mode="diffusion" aria-pressed="false"><span class="swatch swatch-dm" aria-hidden="true"></span>Diffusion model</button>
+        <button type="button" data-mode="gyro" aria-pressed="false"><span class="swatch swatch-gyro" aria-hidden="true"></span>Swimming cells</button>
       </div>
       <p class="sim-caption" data-for="vortices">
         Point vortices of both signs in a disc, each mirrored by an image vortex beyond the wall.
@@ -33,6 +34,14 @@
         data say least. Here a simple stand-in plays the part of the trained neural network.
         <span class="sim-refs"><a href="{{ "research/math-biology/" | relURL }}">Maths biology research</a></span>
       </p>
+      <p class="sim-caption" data-for="gyro" hidden>
+        Bottom-heavy swimming algae in the ABC flow, a classic chaotic three-dimensional flow, shown in one periodic
+        cell. Gyrotaxis, the torque that turns the cells upright against gravity, gathers them into helical plumes
+        and suppresses the chaotic mixing that passive particles feel. As the swimming speed rises, chaos is
+        suppressed, returns for speeds just above the flow speed, and is suppressed again, as the inset shows.
+        Drag to rotate.
+        <span class="sim-refs"><a href="{{ "research/math-biology/" | relURL }}">Maths biology research</a>, <a href="https://doi.org/10.1103/PhysRevFluids.3.023102">related paper</a></span>
+      </p>
       <div class="sim-controls">
         <label data-for="vortices">Mutual friction <i>α</i>
           <input type="range" id="alpha" min="0" max="0.1" step="0.005" value="0">
@@ -40,6 +49,9 @@
         <label data-for="forest" hidden>Planting density
           <input type="range" id="density" min="0.3" max="0.95" step="0.01" value="0.7">
           <output for="density" id="density-out">70%</output></label>
+        <label data-for="gyro" hidden>Swimming speed <i>Φ</i>
+          <input type="range" id="phi" min="0" max="3" step="0.05" value="1">
+          <output for="phi" id="phi-out">1.00</output></label>
         <button type="button" id="sim-sample" data-for="diffusion" hidden>New sample</button>
         <span class="sim-status" id="sim-status" aria-live="polite"></span>
         <button type="button" id="sim-restart">Restart</button>

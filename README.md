@@ -93,6 +93,14 @@ File names are case-sensitive on GitHub (`Tree_snap.png` is not `tree_snap.png`)
   late in the process it commits to one sample. A second sample is drawn from the same data before the
   landscape changes; "New sample" draws another.
 
+- **Swimming cells.** Bottom-heavy (gyrotactic) spherical swimmers in the ABC flow with A = B = C = 1, after
+  Heath-Richardson, Baggaley & Hill, Phys. Rev. Fluids 3, 023102 (2018): dx/dt = u + Φp and
+  dp/dt = [k − (k·p)p]/(2B) + ½ω×p, with gyrotactic reorientation time B = 0.25 and ω = u because the flow is
+  Beltrami. 800 cells are integrated with RK4 in one periodic cell. The status line reports the fraction of a
+  24 × 24 horizontal grid that contains cells, which falls as plumes form. The inset curve (`LYAP` in the file)
+  is the largest Lyapunov exponent of this same model against Φ, computed offline: positive at Φ = 0, suppressed
+  for Φ ≈ 0.4–1.3, positive again for Φ ≈ 1.35–2.25, and suppressed beyond.
+
 Parameters are at the top of each object in the file. Animations pause when off-screen, and start paused for
 visitors who have asked their system to reduce motion.
 

@@ -33,7 +33,7 @@
   const TAU = Math.PI * 2;
 
   let W = 0, H = 0, dpr = 1;
-  let mode = ["vortices", "forest", "diffusion"][Math.floor(Math.random() * 3)];
+  let mode = ["vortices", "forest", "diffusion", "gyro"][Math.floor(Math.random() * 4)];
   let paused = reduceMotion, visible = true, last = 0, raf = 0;
 
   /* ------------------------------------------------------------------ vortices */
@@ -628,7 +628,169 @@
     },
   };
 
-  const sims = { vortices: Vort, forest: Forest, diffusion: Diff };
+  /* ------------------------------------------------------------------ gyrotactic swimmers */
+  /*
+   * Bottom-heavy (gyrotactic) swimming cells in the ABC flow u = (sin z + cos y, sin x + cos z, sin y + cos x),
+   * after Heath-Richardson, Baggaley & Hill, Phys. Rev. Fluids 3, 023102 (2018). Spherical cells obey
+   *     dx/dt = u + Φ p,     dp/dt = [k − (k·p) p] / (2B) + ½ ω × p,
+   * where p is the swimming direction, k points up, Φ is swimming speed relative to the flow speed and B is the
+   * gyrotactic reorientation time. The ABC flow is Beltrami, so the vorticity ω equals u.
+   * LYAP is the largest Lyapunov exponent of this model for B = 0.25, computed offline (16 cells, t = 250 each).
+   */
+  const LYAP = [[0, 0.0248], [0.15, 0.0137], [0.3, 0.0045], [0.45, -0.0026], [0.6, -0.0035], [0.75, -0.0003],
+    [0.9, -0.0021], [1.05, -0.0043], [1.2, -0.0036], [1.35, 0.0039], [1.5, 0.0059], [1.65, 0.0044], [1.8, 0.0049],
+    [1.95, 0.0044], [2.1, 0.0058], [2.25, 0.0011], [2.4, -0.0039], [2.55, -0.0028], [2.7, -0.0056], [2.85, -0.0023], [3, -0.0044]];
+
+  const Gyro = {
+    N: 800, Bg: 0.25, Phi: 1.0, rate: 4, h: 0.04, trailLen: 9,
+    S: null, trails: null, head: 0, yaw: 0.6, pitch: 0.38, spin: 0.12, dragging: false,
+    occ: 1, occT: 0, view: null,
+
+    reset() {
+      const N = this.N;
+      this.S = new Float64Array(6 * N);
+      for (let k = 0; k < N; k++) {
+        const th = Math.acos(2 * Math.random() - 1), ph = TAU * Math.random(), o = 6 * k;
+        this.S[o] = TAU * Math.random(); this.S[o + 1] = TAU * Math.random(); this.S[o + 2] = TAU * Math.random();
+        this.S[o + 3] = Math.sin(th) * Math.cos(ph); this.S[o + 4] = Math.sin(th) * Math.sin(ph); this.S[o + 5] = Math.cos(th);
+      }
+      this.trails = new Float32Array(3 * N * this.trailLen).fill(NaN); this.head = 0;
+      this.measure();
+    },
+    rhs(s, o, out) {
+      const x = s[o], y = s[o + 1], z = s[o + 2], px = s[o + 3], py = s[o + 4], pz = s[o + 5];
+      const u = Math.sin(z) + Math.cos(y), v = Math.sin(x) + Math.cos(z), w = Math.sin(y) + Math.cos(x);
+      const g = 1 / (2 * this.Bg), F = this.Phi;
+      out[0] = u + F * px; out[1] = v + F * py; out[2] = w + F * pz;
+      out[3] = -g * pz * px + 0.5 * (v * pz - w * py);
+      out[4] = -g * pz * py + 0.5 * (w * px - u * pz);
+      out[5] = g * (1 - pz * pz) + 0.5 * (u * py - v * px);
+    },
+    advance(T) {
+      const steps = Math.max(1, Math.round(T / this.h)), h = T / steps, S = this.S;
+      const k1 = new Float64Array(6), k2 = new Float64Array(6), k3 = new Float64Array(6), k4 = new Float64Array(6), t = new Float64Array(6);
+      for (let n = 0; n < steps; n++) for (let c = 0; c < this.N; c++) {
+        const o = 6 * c;
+        this.rhs(S, o, k1); for (let i = 0; i < 6; i++) t[i] = S[o + i] + 0.5 * h * k1[i];
+        this.rhs(t, 0, k2); for (let i = 0; i < 6; i++) t[i] = S[o + i] + 0.5 * h * k2[i];
+        this.rhs(t, 0, k3); for (let i = 0; i < 6; i++) t[i] = S[o + i] + h * k3[i];
+        this.rhs(t, 0, k4);
+        for (let i = 0; i < 6; i++) S[o + i] += (h / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]);
+        const m = Math.hypot(S[o + 3], S[o + 4], S[o + 5]); S[o + 3] /= m; S[o + 4] /= m; S[o + 5] /= m;
+        for (let i = 0; i < 3; i++) S[o + i] = ((S[o + i] % TAU) + TAU) % TAU;  // periodic cell
+      }
+    },
+    measure() {  // fraction of a 24 × 24 horizontal grid that contains at least one cell
+      const G = 24, seen = new Uint8Array(G * G);
+      for (let c = 0; c < this.N; c++) seen[Math.floor(this.S[6 * c] / TAU * G) % G + G * (Math.floor(this.S[6 * c + 1] / TAU * G) % G)] = 1;
+      let n = 0; for (const v of seen) n += v;
+      this.occ = n / (G * G);
+    },
+    step(dt) {
+      this.advance(dt * this.rate);
+      if (!this.dragging) this.yaw += this.spin * dt;
+      const L = this.trailLen, base = 3 * this.N * this.head;
+      for (let c = 0; c < this.N; c++) for (let i = 0; i < 3; i++) this.trails[base + 3 * c + i] = this.S[6 * c + i];
+      this.head = (this.head + 1) % L;
+      this.occT += dt;
+      if (this.occT > 0.4) { this.occT = 0; this.measure(); }
+    },
+    layout() {
+      const wide = W / H > 1.3;
+      const chart = wide ? { w: Math.min(250, W * 0.26), h: 132 } : { w: Math.min(W - 24, 300), h: 104 };
+      chart.x = wide ? W - chart.w - 6 : (W - chart.w) / 2;
+      chart.y = wide ? H - chart.h - 18 : H - chart.h - 14;
+      const boxW = wide ? W - chart.w - 24 : W, boxH = wide ? H : H - chart.h - 30;
+      this.view = { cx: boxW / 2, cy: boxH / 2 + 4, k: Math.min(boxW, boxH) / (2 * Math.PI * 1.75), chart };
+      if (!this.S) this.reset();
+    },
+    project(x, y, z) {  // centred periodic cell -> screen, with a gentle perspective
+      const X = x - Math.PI, Y = y - Math.PI, Z = z - Math.PI, cy = Math.cos(this.yaw), sy = Math.sin(this.yaw);
+      const x1 = X * cy - Y * sy, y1 = X * sy + Y * cy, cp = Math.cos(this.pitch), sp = Math.sin(this.pitch);
+      const depth = y1 * cp + Z * sp, up = Z * cp - y1 * sp, s = 1 / (1 + depth / (4 * Math.PI)), v = this.view;
+      return [v.cx + x1 * s * v.k, v.cy - up * s * v.k, depth];
+    },
+    draw() {
+      ctx.clearRect(0, 0, W, H);
+      const T = TAU, v = this.view;
+      // the periodic cell
+      const corners = [];
+      for (let i = 0; i < 8; i++) corners.push(this.project(i & 1 ? T : 0, i & 2 ? T : 0, i & 4 ? T : 0));
+      ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.beginPath();
+      for (let i = 0; i < 8; i++) for (const b of [1, 2, 4]) if (!(i & b)) {
+        const a = corners[i], c = corners[i | b]; ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1]);
+      }
+      ctx.stroke();
+      // gravity arrow beside the cell
+      let right = -Infinity, top = Infinity, bottom = -Infinity;
+      for (const c of corners) { right = Math.max(right, c[0]); top = Math.min(top, c[1]); bottom = Math.max(bottom, c[1]); }
+      const gx = Math.min(right + 22, W - 10), g0 = top + (bottom - top) * 0.3, g1 = top + (bottom - top) * 0.62;
+      ctx.strokeStyle = col.muted; ctx.fillStyle = col.muted; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(gx, g0); ctx.lineTo(gx, g1); ctx.lineTo(gx - 4, g1 - 6); ctx.moveTo(gx, g1); ctx.lineTo(gx + 4, g1 - 6); ctx.stroke();
+      ctx.font = "italic 14px Newsreader, Georgia, serif"; ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.fillText("g", gx, g1 + 4); ctx.textAlign = "left";
+      // short trails, skipping segments that wrap around the periodic cell
+      const L = this.trailLen, N = this.N, P = new Array(L);
+      ctx.strokeStyle = col.S; ctx.globalAlpha = 0.22; ctx.lineWidth = 1; ctx.beginPath();
+      for (let c = 0; c < N; c++) {
+        let prev = null, prevW = null;
+        for (let j = 0; j < L; j++) {
+          const idx = (this.head + j) % L, b = 3 * N * idx + 3 * c;
+          const x = this.trails[b], y = this.trails[b + 1], z = this.trails[b + 2];
+          if (x !== x) { prev = null; continue; }  // NaN: not filled yet
+          const p = this.project(x, y, z);
+          if (prev && Math.abs(x - prevW[0]) < 1 && Math.abs(y - prevW[1]) < 1 && Math.abs(z - prevW[2]) < 1) {
+            ctx.moveTo(prev[0], prev[1]); ctx.lineTo(p[0], p[1]);
+          }
+          prev = p; prevW = [x, y, z];
+        }
+      }
+      ctx.stroke();
+      // cells, nearer ones larger and stronger
+      ctx.fillStyle = col.S;
+      for (const [lo, hi, a, r] of [[0.7, 9, 0.45, 1.4], [-0.7, 0.7, 0.75, 1.8], [-9, -0.7, 1, 2.3]]) {
+        ctx.globalAlpha = a; ctx.beginPath();
+        for (let c = 0; c < N; c++) {
+          const p = this.project(this.S[6 * c], this.S[6 * c + 1], this.S[6 * c + 2]), d = p[2] / Math.PI;
+          if (d < lo || d >= hi) continue;
+          ctx.moveTo(p[0] + r, p[1]); ctx.arc(p[0], p[1], r, 0, TAU);
+        }
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      this.drawChart(v.chart);
+    },
+    drawChart(c) {
+      const { x, y, w, h } = c, top = y + 28, bot = y + h - 32, lam = LYAP.map((q) => q[1]);
+      const ymin = Math.min(...lam) * 1.15, ymax = Math.max(...lam) * 1.1;
+      const X = (f) => x + 4 + (f / 3) * (w - 8), Y = (l) => bot - ((l - ymin) / (ymax - ymin)) * (bot - top);
+      ctx.fillStyle = col.ink; ctx.font = "13px Newsreader, Georgia, serif"; ctx.textBaseline = "alphabetic";
+      ctx.fillText("Lyapunov exponent of this model", x, y + 12);
+      // positive (chaotic) part shaded
+      ctx.fillStyle = "rgba(224,130,20,0.18)"; ctx.beginPath(); ctx.moveTo(X(0), Y(0));
+      for (const [f, l] of LYAP) ctx.lineTo(X(f), Y(Math.max(0, l)));
+      ctx.lineTo(X(3), Y(0)); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(X(0), Y(0) + 0.5); ctx.lineTo(X(3), Y(0) + 0.5); ctx.stroke();
+      ctx.strokeStyle = col.ink; ctx.lineWidth = 1.4; ctx.beginPath();
+      LYAP.forEach(([f, l], i) => (i ? ctx.lineTo(X(f), Y(l)) : ctx.moveTo(X(f), Y(l)))); ctx.stroke();
+      // marker at the current swimming speed
+      let j = 0; while (j < LYAP.length - 2 && LYAP[j + 1][0] < this.Phi) j++;
+      const [f0, l0] = LYAP[j], [f1, l1] = LYAP[j + 1], t = Math.min(1, Math.max(0, (this.Phi - f0) / (f1 - f0)));
+      ctx.fillStyle = col.S; ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(X(this.Phi), Y(l0 + t * (l1 - l0)), 4.5, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = col.muted; ctx.font = "italic 12px Newsreader, Georgia, serif"; ctx.textAlign = "center";
+      for (const f of [0, 1, 2, 3]) ctx.fillText(String(f), X(f), bot + 13);
+      ctx.fillText("swimming speed Φ", x + w / 2, bot + 28);
+      ctx.textAlign = "left"; ctx.fillStyle = "rgb(190,105,10)"; ctx.fillText("chaotic", X(0.3), top + 10);
+    },
+    click() {},
+    drag(dx) { this.yaw += dx * 0.01; },
+    status() {
+      return `${this.N} cells cover ${Math.round(100 * this.occ)}% of the horizontal plane`;
+    },
+  };
+
+  const sims = { vortices: Vort, forest: Forest, diffusion: Diff, gyro: Gyro };
 
   /* ------------------------------------------------------------------ plumbing */
   function resize() {
@@ -637,7 +799,7 @@
     W = Math.max(1, r.width); H = Math.max(1, r.height);
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    Vort.layout(); Forest.layout(); Diff.layout();
+    Vort.layout(); Forest.layout(); Diff.layout(); Gyro.layout();
     render();
   }
   let lastStatus = "";
@@ -662,6 +824,7 @@
       vortices: "Animation of point vortices moving inside a circular container",
       forest: "Animation of a disease spreading through a planted forest, with a graph of susceptible, infected and removed trees",
       diffusion: "Animation in three panels: an outbreak and a sparse survey of it; a diffusion model turning noise into a map of transmission; and the true transmission map",
+      gyro: "Rotating three-dimensional view of swimming cells in a periodic flow, gathering into vertical plumes, with a small graph of the Lyapunov exponent against swimming speed",
     }[m]);
     render(); schedule();
   }
@@ -682,11 +845,22 @@
   alphaIn.addEventListener("input", () => { Vort.alpha = +alphaIn.value; alphaOut.textContent = Vort.alpha.toFixed(3); });
   densIn.addEventListener("input", () => { densOut.textContent = Math.round(densIn.value * 100) + "%"; });
   densIn.addEventListener("change", () => { Forest.density = +densIn.value; Forest.reset(); render(); });
+  let dragX = null;
   canvas.addEventListener("pointerdown", (e) => {
     const r = canvas.getBoundingClientRect();
     sims[mode].click(e.clientX - r.left, e.clientY - r.top);
+    if (sims[mode].drag) { dragX = e.clientX; Gyro.dragging = true; canvas.setPointerCapture(e.pointerId); }
     render();
   });
+  canvas.addEventListener("pointermove", (e) => {
+    if (dragX === null || !sims[mode].drag) return;
+    sims[mode].drag(e.clientX - dragX); dragX = e.clientX; render();
+  });
+  const endDrag = () => { dragX = null; Gyro.dragging = false; };
+  canvas.addEventListener("pointerup", endDrag);
+  canvas.addEventListener("pointercancel", endDrag);
+  const phiIn = root.querySelector("#phi"), phiOut = root.querySelector("#phi-out");
+  phiIn.addEventListener("input", () => { Gyro.Phi = +phiIn.value; phiOut.textContent = Gyro.Phi.toFixed(2); render(); });
 
   new ResizeObserver(() => resize()).observe(canvas);
   if ("IntersectionObserver" in window)
@@ -700,6 +874,7 @@
   if (reduceMotion) {  // static frames for visitors who prefer reduced motion
     for (let k = 0; k < 120; k++) Forest.tick();
     Diff.finish();
+    Gyro.advance(50);  // plumes already formed
   }
   setMode(mode);
   setPaused(paused);
