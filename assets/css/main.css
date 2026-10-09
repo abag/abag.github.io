@@ -74,8 +74,8 @@ p { margin: 0 0 1em; }
 .hero-sim .sim-stage { margin-inline: calc(-1 * clamp(0rem, 1vw, 1rem)); width: auto; }
 .sim-stage { position: relative; width: 100%; aspect-ratio: 16 / 7.5; min-height: 300px; max-height: 560px; }
 .sim-stage canvas { width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: manipulation; }
-[data-sim-root][data-mode="gyro"] .sim-stage canvas { cursor: grab; touch-action: pan-y; }
-[data-sim-root][data-mode="gyro"] .sim-stage canvas:active { cursor: grabbing; }
+[data-sim-root][data-mode="gyro"] .sim-stage canvas, [data-sim-root][data-mode="kelvin"] .sim-stage canvas { cursor: grab; touch-action: pan-y; }
+[data-sim-root][data-mode="gyro"] .sim-stage canvas:active, [data-sim-root][data-mode="kelvin"] .sim-stage canvas:active { cursor: grabbing; }
 .sim-tabs { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
 button { font: inherit; color: inherit; }
 .sim-tabs button, .pub-filter button, .sim-controls button {
@@ -88,6 +88,7 @@ button { font: inherit; color: inherit; }
 .swatch-qf { background: linear-gradient(90deg, var(--qf) 50%, var(--qf-neg) 50%); }
 .swatch-dm { background: linear-gradient(90deg, #d4b9da, #e7298a, #67001f); }
 .swatch-gyro { background: radial-gradient(circle at 50% 35%, var(--bio-s) 0 38%, color-mix(in srgb, var(--bio-s) 35%, white) 40%); border: 1px solid var(--bio-s); }
+.swatch-kw { background: linear-gradient(90deg, #92c5de, #2166ac, #053061); }
 .swatch-bio { background: conic-gradient(var(--bio-s) 0 40%, var(--bio-i) 40% 70%, var(--bio-r) 70%); }
 .sim-caption { max-width: var(--measure); color: var(--ink-soft); font-size: 1.0625rem; margin: 0.75rem 0 0.5rem; }
 .sim-refs { display: block; margin-top: 0.25rem; }

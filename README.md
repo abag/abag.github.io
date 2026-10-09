@@ -101,6 +101,16 @@ File names are case-sensitive on GitHub (`Tree_snap.png` is not `tree_snap.png`)
   is the largest Lyapunov exponent of this same model against Φ, computed offline: positive at Φ = 0, suppressed
   for Φ ≈ 0.4–1.3, positive again for Φ ≈ 1.35–2.25, and suppressed beyond.
 
+- **Kelvin waves.** A single periodic quantised vortex in the vortex filament model (κ = 1, core size a = 10⁻³ of a
+  2π period), written as a graph w(z) = x + iy and moved with the desingularised Biot–Savart velocity (straight-segment
+  induction from the rest of the line and one periodic image either side, plus the Schwarz local term). 128 points;
+  spectral integrating-factor RK4 with dt = 0.015, the linear dispersion ω(k) taken from the same discrete operator so
+  the stiffness is removed; hyperviscous sink above 0.55 k_max standing in for sound emission; forcing holds
+  k = ±1, ±2, ±3 at slope 0.3 with randomised phases (the slider sets this; 0 gives free decay). "Pluck the vortex"
+  adds a localised kink. The inset is the time-averaged spectrum E(k) ∝ k²(|ŵ_k|² + |ŵ_−k|²) with k^{−5/3} and
+  k^{−7/5} guides; the status line shows the fitted slope over k = 4–12, typically about −2.1, steeper than both
+  predictions, because the inertial range at this resolution is too short to discriminate them.
+
 Parameters are at the top of each object in the file. Animations pause when off-screen, and start paused for
 visitors who have asked their system to reduce motion.
 

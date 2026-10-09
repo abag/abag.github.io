@@ -33,7 +33,7 @@
   const TAU = Math.PI * 2;
 
   let W = 0, H = 0, dpr = 1;
-  let mode = ["vortices", "forest", "diffusion", "gyro"][Math.floor(Math.random() * 4)];
+  let mode = ["vortices", "forest", "diffusion", "gyro", "kelvin"][Math.floor(Math.random() * 5)];
   let paused = reduceMotion, visible = true, last = 0, raf = 0;
 
   /* ------------------------------------------------------------------ vortices */
@@ -790,7 +790,255 @@
     },
   };
 
-  const sims = { vortices: Vort, forest: Forest, diffusion: Diff, gyro: Gyro };
+  /* ------------------------------------------------------------------ Kelvin-wave cascade */
+  /*
+   * A single quantised vortex, periodic along its length (z in [0, 2π)), in the vortex filament model with κ = 1.
+   * The line is written as a graph w(z) = x + iy (valid while waves do not overturn) and moves with the
+   * desingularised Biot–Savart velocity: exact straight-segment induction from the rest of the line and one periodic
+   * image either side, plus the local term (κ/4π) ln(2√(l₋l₊)/(e^{1/4} a)) s′ × s″. The graph moves with
+   * ∂w/∂t = v_x + i v_y − (∂w/∂z) v_z.
+   * Time stepping is spectral with integrating-factor RK4: the linear Kelvin-wave dispersion ω(k), computed once
+   * from the same discrete operator, is integrated exactly, which removes the stiffness ω(k_max)/ω(1) ~ 10³.
+   * A hyperviscous sink above k ≈ 0.55 k_max stands in for phonon emission. Forcing holds |ŵ_k| at k = ±1, ±2, ±3
+   * at a fixed slope with slowly randomised phases. With 128 points the inertial range is short (k ≈ 4–12) and long
+   * prototype runs give a time-averaged slope of about −2.1 ± 0.15 there: steeper than both L'vov–Nazarenko k^{-5/3}
+   * and Kozik–Svistunov k^{-7/5}, so this toy shows the cascade but cannot discriminate between the theories.
+   */
+  const Kelvin = {
+    N: 128, a: 1e-3, dt: 0.015, stepsPerFrame: 3, forcing: 0.3, jitter: 0.3,
+    ready: false, angle: 0.4, spin: 0.15, dragging: false, view: null,
+    t: 0, ema: null, slope: 0, blewUp: false,
+
+    init() {
+      const N = this.N, h = TAU / N;
+      this.h = h; this.kOf = (i) => (i < N / 2 ? i : i - N);
+      // radix-2 FFT
+      const lev = Math.log2(N) | 0; this.rev = new Uint32Array(N);
+      for (let i = 0; i < N; i++) { let r = 0; for (let b = 0; b < lev; b++) r |= ((i >> b) & 1) << (lev - 1 - b); this.rev[i] = r; }
+      this.cosT = new Float64Array(N / 2); this.sinT = new Float64Array(N / 2);
+      for (let i = 0; i < N / 2; i++) { this.cosT[i] = Math.cos(TAU * i / N); this.sinT[i] = Math.sin(TAU * i / N); }
+      const NS = 3 * N;  // one periodic image either side
+      this.X = new Float64Array(NS + 1); this.Y = new Float64Array(NS + 1); this.Z = new Float64Array(NS + 1);
+      const A = () => new Float64Array(N);
+      this.b = { xr: A(), xi: A(), dr: A(), di: A(), oR: A(), oI: A() };
+      this.k1 = [A(), A()]; this.k2 = [A(), A()]; this.k3 = [A(), A()]; this.k4 = [A(), A()]; this.Yb = [A(), A()];
+      this.W = [A(), A()]; this.phys = [A(), A()];
+      // linear rates: apply the full operator to a tiny helix in each mode
+      this.lamI = A();
+      const Wr = A(), Wi = A(), Fr = A(), Fi = A(), eps = 1e-7;
+      for (let i = 0; i < N; i++) { Wr.fill(0); Wi.fill(0); Wr[i] = eps * N; this.fullRHS(Wr, Wi, Fr, Fi); this.lamI[i] = Fi[i] / Wr[i]; }
+      // linear operator: dispersion plus a hyperviscous sink (phonon emission) beyond kd
+      const kd = 0.55 * (N / 2), wd = Math.abs(this.lamI[kd | 0]);
+      this.LR = A();
+      for (let i = 0; i < N; i++) this.LR[i] = -2 * Math.pow(Math.abs(this.kOf(i)) / kd, 12) * wd;
+      const ex = (f) => { const R = A(), I = A(); for (let i = 0; i < N; i++) { const g = Math.exp(this.LR[i] * f); R[i] = g * Math.cos(this.lamI[i] * f); I[i] = g * Math.sin(this.lamI[i] * f); } return [R, I]; };
+      [this.E1R, this.E1I] = ex(this.dt); [this.E2R, this.E2I] = ex(this.dt / 2);
+      this.forced = [1, 2, 3, -1, -2, -3].map((k) => (k + N) % N);
+      this.ready = true;
+      this.reset();
+    },
+    fft(re, im, inverse) {
+      const n = this.N, rev = this.rev;
+      for (let i = 0; i < n; i++) { const j = rev[i]; if (j > i) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; } }
+      for (let size = 2; size <= n; size *= 2) {
+        const half = size / 2, step = n / size;
+        for (let i = 0; i < n; i += size) for (let j = i, k = 0; j < i + half; j++, k += step) {
+          const c = this.cosT[k], s = inverse ? this.sinT[k] : -this.sinT[k];
+          const tr = re[j + half] * c - im[j + half] * s, ti = re[j + half] * s + im[j + half] * c;
+          re[j + half] = re[j] - tr; im[j + half] = im[j] - ti; re[j] += tr; im[j] += ti;
+        }
+      }
+      if (inverse) for (let i = 0; i < n; i++) { re[i] /= n; im[i] /= n; }
+    },
+    rhsPhys(x, y, wpr, wpi, outR, outI) {
+      const N = this.N, h = this.h, X = this.X, Y = this.Y, Z = this.Z, NS = 3 * N, base = N, k4 = 1 / (4 * Math.PI);
+      let c = 0;
+      for (let m = -1; m <= 1; m++) for (let j = 0; j < N; j++) { X[c] = x[j]; Y[c] = y[j]; Z[c] = j * h + m * TAU; c++; }
+      X[c] = x[0]; Y[c] = y[0]; Z[c] = 2 * TAU;
+      for (let j = 0; j < N; j++) {
+        const px = x[j], py = y[j], pz = j * h;
+        let vx = 0, vy = 0, vz = 0;
+        for (let s = 0; s < NS; s++) {
+          if (s === base + j || s === base + j - 1) continue;  // the two segments touching point j
+          const r1x = X[s] - px, r1y = Y[s] - py, r1z = Z[s] - pz, r2x = X[s + 1] - px, r2y = Y[s + 1] - py, r2z = Z[s + 1] - pz;
+          const cx = r1y * r2z - r1z * r2y, cy = r1z * r2x - r1x * r2z, cz = r1x * r2y - r1y * r2x;
+          const c2 = cx * cx + cy * cy + cz * cz; if (c2 < 1e-30) continue;
+          const n1 = Math.sqrt(r1x * r1x + r1y * r1y + r1z * r1z), n2 = Math.sqrt(r2x * r2x + r2y * r2y + r2z * r2z);
+          const f = k4 * (n1 + n2) / (n1 * n2 * (n1 * n2 + r1x * r2x + r1y * r2y + r1z * r2z));
+          vx += f * cx; vy += f * cy; vz += f * cz;
+        }
+        const jm = (j - 1 + N) % N, jp = (j + 1) % N;
+        const ax = x[jm] - px, ay = y[jm] - py, az = -h, bx = x[jp] - px, by = y[jp] - py, bz = h;
+        const lm = Math.hypot(ax, ay, az), lp = Math.hypot(bx, by, bz), L = lm + lp;
+        const tx = (bx - ax) / L, ty = (by - ay) / L, tz = (bz - az) / L;
+        const sx = 2 / L * (bx / lp + ax / lm), sy = 2 / L * (by / lp + ay / lm), sz = 2 / L * (bz / lp + az / lm);
+        const beta = k4 * Math.log(2 * Math.sqrt(lm * lp) / (Math.exp(0.25) * this.a));
+        vx += beta * (ty * sz - tz * sy); vy += beta * (tz * sx - tx * sz); vz += beta * (tx * sy - ty * sx);
+        outR[j] = vx - wpr[j] * vz; outI[j] = vy - wpi[j] * vz;
+      }
+    },
+    fullRHS(Wr, Wi, outR, outI) {  // spectral in, spectral out
+      const N = this.N, { xr, xi, dr, di, oR, oI } = this.b;
+      for (let i = 0; i < N; i++) { xr[i] = Wr[i]; xi[i] = Wi[i]; const k = this.kOf(i); dr[i] = -k * Wi[i]; di[i] = k * Wr[i]; }
+      dr[N / 2] = 0; di[N / 2] = 0;
+      this.fft(xr, xi, true); this.fft(dr, di, true);
+      this.rhsPhys(xr, xi, dr, di, oR, oI);
+      this.fft(oR, oI, false);
+      for (let i = 0; i < N; i++) { outR[i] = oR[i]; outI[i] = oI[i]; }
+    },
+    Nl(Wr, Wi, out) {  // nonlinear remainder: full right-hand side minus the linear dispersion
+      this.fullRHS(Wr, Wi, out[0], out[1]);
+      for (let i = 0; i < this.N; i++) { out[0][i] += this.lamI[i] * Wi[i]; out[1][i] -= this.lamI[i] * Wr[i]; }
+    },
+    stepOnce() {
+      const N = this.N, dt = this.dt, [Wr, Wi] = this.W, { k1, k2, k3, k4, Yb } = this;
+      const E1R = this.E1R, E1I = this.E1I, E2R = this.E2R, E2I = this.E2I;
+      this.Nl(Wr, Wi, k1);
+      for (let i = 0; i < N; i++) { const ar = Wr[i] + 0.5 * dt * k1[0][i], ai = Wi[i] + 0.5 * dt * k1[1][i]; Yb[0][i] = E2R[i] * ar - E2I[i] * ai; Yb[1][i] = E2R[i] * ai + E2I[i] * ar; }
+      this.Nl(Yb[0], Yb[1], k2);
+      for (let i = 0; i < N; i++) { Yb[0][i] = E2R[i] * Wr[i] - E2I[i] * Wi[i] + 0.5 * dt * k2[0][i]; Yb[1][i] = E2R[i] * Wi[i] + E2I[i] * Wr[i] + 0.5 * dt * k2[1][i]; }
+      this.Nl(Yb[0], Yb[1], k3);
+      for (let i = 0; i < N; i++) {
+        Yb[0][i] = E1R[i] * Wr[i] - E1I[i] * Wi[i] + dt * (E2R[i] * k3[0][i] - E2I[i] * k3[1][i]);
+        Yb[1][i] = E1R[i] * Wi[i] + E1I[i] * Wr[i] + dt * (E2R[i] * k3[1][i] + E2I[i] * k3[0][i]);
+      }
+      this.Nl(Yb[0], Yb[1], k4);
+      for (let i = 0; i < N; i++) {
+        const sr = k2[0][i] + k3[0][i], si = k2[1][i] + k3[1][i];
+        const nr = E1R[i] * Wr[i] - E1I[i] * Wi[i] + dt / 6 * ((E1R[i] * k1[0][i] - E1I[i] * k1[1][i]) + 2 * (E2R[i] * sr - E2I[i] * si) + k4[0][i]);
+        const ni = E1R[i] * Wi[i] + E1I[i] * Wr[i] + dt / 6 * ((E1R[i] * k1[1][i] + E1I[i] * k1[0][i]) + 2 * (E2R[i] * si + E2I[i] * sr) + k4[1][i]);
+        Wr[i] = nr; Wi[i] = ni;
+      }
+      if (this.forcing > 0) for (const i of this.forced) {
+        const amp = this.forcing * N / Math.abs(this.kOf(i)), ph = Math.atan2(Wi[i], Wr[i]) + (Math.random() - 0.5) * this.jitter;
+        Wr[i] = amp * Math.cos(ph); Wi[i] = amp * Math.sin(ph);
+      }
+      this.t += dt;
+      // time-averaged energy spectrum E(k) ∝ k² (|ŵ_k|² + |ŵ_−k|²), exponential moving average over ~12 time units
+      const r = dt / 12, half = N / 2, E = this.ema;
+      for (let k = 1; k < half; k++) {
+        const p = Wr[k] ** 2 + Wi[k] ** 2 + Wr[N - k] ** 2 + Wi[N - k] ** 2, e = k * k * p / (N * N);
+        E[k] = E[k] ? E[k] + r * (e - E[k]) : e;
+      }
+    },
+    reset() {
+      if (!this.ready) return;
+      const N = this.N;
+      this.W[0].fill(0); this.W[1].fill(0); this.ema = new Float64Array(N / 2); this.t = 0; this.blewUp = false;
+      const amp = Math.max(this.forcing, 0.15);
+      for (const i of this.forced) { const ph = TAU * Math.random(); this.W[0][i] = amp * N / Math.abs(this.kOf(i)) * Math.cos(ph); this.W[1][i] = amp * N / Math.abs(this.kOf(i)) * Math.sin(ph); }
+    },
+    pluck() {  // a localised kink, broadband in k, like the cusp left by a reconnection
+      if (!this.ready) return;
+      const N = this.N, z0 = TAU * Math.random(), sig = 0.18, B = 0.1, th = TAU * Math.random();
+      const pr = new Float64Array(N), pi = new Float64Array(N);
+      for (let j = 0; j < N; j++) {
+        let d = j * this.h - z0; d -= TAU * Math.round(d / TAU);
+        const g = B * Math.exp(-d * d / (2 * sig * sig)); pr[j] = g * Math.cos(th); pi[j] = g * Math.sin(th);
+      }
+      this.fft(pr, pi, false);
+      for (let i = 0; i < N; i++) { this.W[0][i] += pr[i]; this.W[1][i] += pi[i]; }
+    },
+    advance(n) { for (let s = 0; s < n; s++) this.stepOnce(); },
+    step(dt) {
+      if (!this.ready) this.init();
+      const t0 = performance.now();
+      for (let s = 0; s < this.stepsPerFrame; s++) this.stepOnce();
+      // keep the frame budget: drop to fewer steps on slow machines
+      const ms = performance.now() - t0;
+      if (ms > 14 && this.stepsPerFrame > 1) this.stepsPerFrame--; else if (ms < 6 && this.stepsPerFrame < 4) this.stepsPerFrame++;
+      if (!isFinite(this.W[0][3]) || !isFinite(this.W[1][5])) { this.blewUp = true; this.reset(); }
+      if (!this.dragging) this.angle += this.spin * dt;
+      this.fit();
+    },
+    fit() {  // least-squares slope of log E against log k over 4 ≤ k ≤ 12
+      let sx = 0, sy = 0, sxx = 0, sxy = 0, n = 0;
+      for (let k = 4; k <= 12; k++) { if (!(this.ema[k] > 0)) return; const X = Math.log(k), Y = Math.log(this.ema[k]); sx += X; sy += Y; sxx += X * X; sxy += X * Y; n++; }
+      this.slope = (n * sxy - sx * sy) / (n * sxx - sx * sx);
+    },
+    layout() {
+      const wide = W / H > 1.3;
+      const chart = wide ? { w: Math.min(290, W * 0.3), h: 190 } : { w: Math.min(W - 24, 320), h: 170 };
+      chart.x = wide ? W - chart.w - 8 : (W - chart.w) / 2;
+      chart.y = H - chart.h - 6;
+      const lineTop = 10, lineBot = wide ? H - 20 : chart.y - 16;
+      const left = 16, right = wide ? W - chart.w - 40 : W - 16;
+      this.view = { left, right, cy: wide ? (lineTop + lineBot) / 2 - 10 : (lineTop + lineBot) / 2, chart, labelY: wide ? H - 6 : chart.y - 6,
+        scale: (right - left) / TAU };
+    },
+    draw() {
+      if (!this.ready) this.init();
+      ctx.clearRect(0, 0, W, H);
+      const N = this.N, v = this.view, [pr, pi] = this.phys;
+      for (let i = 0; i < N; i++) { pr[i] = this.W[0][i]; pi[i] = this.W[1][i]; }
+      this.fft(pr, pi, true);
+      // small-scale content along the line: high-pass (|k| > 8) displacement
+      const hr = new Float64Array(N), hi = new Float64Array(N);
+      for (let i = 0; i < N; i++) if (Math.abs(this.kOf(i)) > 8) { hr[i] = this.W[0][i]; hi[i] = this.W[1][i]; }
+      this.fft(hr, hi, true);
+      const ca = Math.cos(this.angle), sa = Math.sin(this.angle), m = v.scale;
+      // undisturbed axis
+      ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.setLineDash([4, 5]);
+      ctx.beginPath(); ctx.moveTo(v.left, v.cy); ctx.lineTo(v.right, v.cy); ctx.stroke(); ctx.setLineDash([]);
+      // the vortex: segments coloured by local small-scale amplitude, width by depth
+      const ramp = [[209, 229, 240], [146, 197, 222], [67, 147, 195], [33, 102, 172], [5, 48, 97]];
+      const colour = (q) => { const t = Math.min(1, q) * (ramp.length - 1), i = Math.min(ramp.length - 2, Math.floor(t)), f = t - i, A = ramp[i], B = ramp[i + 1]; return `rgb(${A.map((c, n) => Math.round(c + f * (B[n] - c))).join(",")})`; };
+      const pts = [];
+      for (let j = 0; j <= N; j++) {
+        const jj = j % N, x = pr[jj], y = pi[jj];
+        const up = x * ca - y * sa, depth = x * sa + y * ca;
+        pts.push([v.left + j * this.h * v.scale, v.cy - up * m, depth, Math.hypot(hr[jj], hi[jj])]);
+      }
+      ctx.lineCap = "round";
+      for (let j = 0; j < N; j++) {
+        const p = pts[j], q = pts[j + 1], d = (p[2] + q[2]) / 2, ss = (p[3] + q[3]) / 2;
+        ctx.strokeStyle = colour(0.15 + ss / 0.05); ctx.lineWidth = Math.max(1.2, 3.2 + 3 * d);
+        ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
+      }
+      ctx.fillStyle = col.muted; ctx.font = "italic 12px Newsreader, Georgia, serif"; ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
+      ctx.fillText("one period of the vortex, true scale", v.left, v.labelY);
+      this.drawSpectrum(v.chart);
+    },
+    drawSpectrum(c) {
+      const { x, y, w, h } = c, top = y + 22, bot = y + h - 30, kmax = this.N / 2 - 1;
+      const ymin = -5.5, ymax = 0.3, lx = (k) => x + 6 + (Math.log10(k) / Math.log10(kmax)) * (w - 12);
+      const ly = (e) => bot - ((Math.log10(Math.max(e, 1e-12)) - ymin) / (ymax - ymin)) * (bot - top);
+      ctx.fillStyle = col.ink; ctx.font = "13px Newsreader, Georgia, serif"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.fillText("Kelvin-wave energy spectrum E(k)", x, y + 12);
+      // forcing band and dissipation range
+      const kd = 0.55 * this.N / 2;
+      ctx.fillStyle = "rgba(33,102,172,0.08)"; ctx.fillRect(lx(1), top, lx(3.5) - lx(1), bot - top);
+      ctx.fillStyle = "rgba(107,119,131,0.10)"; ctx.fillRect(lx(kd), top, lx(kmax) - lx(kd), bot - top);
+      ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x + 6, bot + 0.5); ctx.lineTo(x + w - 6, bot + 0.5); ctx.stroke();
+      // reference slopes through the spectrum at k = 4
+      const e4 = this.ema[4] || 1e-3;
+      for (const [p, dash, name] of [[-5 / 3, [], "−5/3"], [-7 / 5, [3, 3], "−7/5"]]) {
+        ctx.strokeStyle = col.muted; ctx.setLineDash(dash); ctx.lineWidth = 1; ctx.beginPath();
+        const kk0 = 4, kk1 = 24, off = 0.12; ctx.moveTo(lx(kk0), ly(e4 * Math.pow(kk0 / 4, p) * off)); ctx.lineTo(lx(kk1), ly(e4 * Math.pow(kk1 / 4, p) * off)); ctx.stroke();
+        ctx.setLineDash([]); ctx.fillStyle = col.muted; ctx.font = "italic 12px Newsreader, Georgia, serif";
+        ctx.fillText(name, lx(kk1) + 3, ly(e4 * Math.pow(kk1 / 4, p) * off) + (p < -1.5 ? 9 : -3));
+      }
+      // the spectrum
+      ctx.strokeStyle = col.pos; ctx.lineWidth = 1.8; ctx.beginPath();
+      for (let k = 1; k <= kmax; k++) { const X = lx(k), Y = ly(this.ema[k]); k === 1 ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y); }
+      ctx.stroke();
+      ctx.fillStyle = col.muted; ctx.font = "italic 12px Newsreader, Georgia, serif"; ctx.textAlign = "center";
+      for (const k of [1, 10]) ctx.fillText(String(k), lx(k), bot + 13);
+      ctx.fillText("wavenumber k", x + w / 2, bot + 26);
+      ctx.textAlign = "left"; ctx.fillText("forcing", lx(1) + 2, top + 11);
+      ctx.textAlign = "right"; ctx.fillText("sound", lx(kmax) - 2, top + 11); ctx.textAlign = "left";
+    },
+    click() {},
+    drag(dx) { this.angle += dx * 0.01; },
+    status() {
+      if (!this.ready) return "Setting up the vortex";
+      if (this.blewUp) return "The waves grew too steep and the simulation restarted";
+      const kind = this.forcing > 0 ? "Forced cascade" : "Free decay";
+      return `${kind}, t = ${this.t.toFixed(0)}. Slope of E(k) over k = 4–12: ${this.slope.toFixed(2)}`;
+    },
+  };
+
+  const sims = { vortices: Vort, forest: Forest, diffusion: Diff, gyro: Gyro, kelvin: Kelvin };
 
   /* ------------------------------------------------------------------ plumbing */
   function resize() {
@@ -799,7 +1047,7 @@
     W = Math.max(1, r.width); H = Math.max(1, r.height);
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    Vort.layout(); Forest.layout(); Diff.layout(); Gyro.layout();
+    Vort.layout(); Forest.layout(); Diff.layout(); Gyro.layout(); Kelvin.layout();
     render();
   }
   let lastStatus = "";
@@ -818,12 +1066,14 @@
 
   function setMode(m) {
     mode = m; last = 0; root.dataset.mode = m;
+    if (m === "kelvin" && !Kelvin.ready) { Kelvin.init(); if (paused) Kelvin.advance(400); }
     root.querySelectorAll(".sim-tabs button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
     root.querySelectorAll("[data-for]").forEach((el) => { el.hidden = el.dataset.for !== m; });
     canvas.setAttribute("aria-label", {
       vortices: "Animation of point vortices moving inside a circular container",
       forest: "Animation of a disease spreading through a planted forest, with a graph of susceptible, infected and removed trees",
       diffusion: "Animation in three panels: an outbreak and a sparse survey of it; a diffusion model turning noise into a map of transmission; and the true transmission map",
+      kelvin: "A single vortex line rippling with helical Kelvin waves, with a graph of its energy spectrum against wavenumber",
       gyro: "Rotating three-dimensional view of swimming cells in a periodic flow, gathering into vertical plumes, with a small graph of the Lyapunov exponent against swimming speed",
     }[m]);
     render(); schedule();
@@ -849,17 +1099,20 @@
   canvas.addEventListener("pointerdown", (e) => {
     const r = canvas.getBoundingClientRect();
     sims[mode].click(e.clientX - r.left, e.clientY - r.top);
-    if (sims[mode].drag) { dragX = e.clientX; Gyro.dragging = true; canvas.setPointerCapture(e.pointerId); }
+    if (sims[mode].drag) { dragX = e.clientX; sims[mode].dragging = true; canvas.setPointerCapture(e.pointerId); }
     render();
   });
   canvas.addEventListener("pointermove", (e) => {
     if (dragX === null || !sims[mode].drag) return;
     sims[mode].drag(e.clientX - dragX); dragX = e.clientX; render();
   });
-  const endDrag = () => { dragX = null; Gyro.dragging = false; };
+  const endDrag = () => { dragX = null; Gyro.dragging = false; Kelvin.dragging = false; };
   canvas.addEventListener("pointerup", endDrag);
   canvas.addEventListener("pointercancel", endDrag);
   const phiIn = root.querySelector("#phi"), phiOut = root.querySelector("#phi-out");
+  const forceIn = root.querySelector("#kforce"), forceOut = root.querySelector("#kforce-out");
+  forceIn.addEventListener("input", () => { Kelvin.forcing = +forceIn.value; forceOut.textContent = Kelvin.forcing ? Kelvin.forcing.toFixed(2) : "off"; render(); });
+  root.querySelector("#kpluck").addEventListener("click", () => { Kelvin.pluck(); render(); });
   phiIn.addEventListener("input", () => { Gyro.Phi = +phiIn.value; phiOut.textContent = Gyro.Phi.toFixed(2); render(); });
 
   new ResizeObserver(() => resize()).observe(canvas);
