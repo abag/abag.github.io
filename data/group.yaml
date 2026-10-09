@@ -1,0 +1,35 @@
+# Research group. Copied from your CV (June 2026).
+current:
+  - name: Matthew Richardson
+    role: PhD student, Newcastle, from 2024
+    topic: Technological applications of Bose–Einstein condensates
+  - name: Axa-Maria Laaperi
+    role: PhD student, Newcastle, from 2023
+    topic: Mathematical and statistical models of wildfires
+  - name: Julie Thomas
+    role: PhD student, Newcastle, from 2022
+    topic: Superfluid dynamics in neutron stars
+  - name: Jamie McKeown
+    role: PhD student, Newcastle, from 2022
+    topic: "Resilient treescapes: a mathematical approach"
+past_postdocs:
+  - [Nick Keepfer, Reinforcement learning in atomic condensates, 2025–2026]
+  - [Gary Liu, Superfluid dynamics in neutron stars, 2023–2026]
+  - [Srivatsa Badariprasad, Turbulence in dipolar condensates, 2021–2024]
+  - [Ryan Doran, Vortices in two-component BECs, 2021–2023]
+  - [Laura Wadkin, Modelling and inference of UK tree pandemics, 2021–2022]
+  - [Hannah Kreczak, Biofouling of microplastics, 2020–2022]
+  - [Sirio Orozco-Fuentes, Forecasting of plant epidemics, 2016–2018]
+past_students:
+  - [Peter Stasiak, Finite-temperature quantum turbulence, "Newcastle PhD, 2022–2026"]
+  - [Matt Dopson, Network modelling of food webs, "Newcastle PhD, 2022–2026"]
+  - [Richard Tattersall, Vortex dynamics in quantum fluids, "Newcastle PhD, 2021–2025"]
+  - [George Grimes, Quantised vortex dynamics, "Newcastle MPhil, 2019–2022"]
+  - [John Holden, Global models of forest epiphytotics, "Leeds/Newcastle PhD, 2017–2022"]
+  - [Sultan Aylobi, Network models of forest epiphytotics, "Newcastle PhD, 2017–2021"]
+  - [Jack Walton, Bayesian inference of cooperative motion, "Newcastle PhD, 2016–2021"]
+  - [Hayley Moore, Constraining models of collective animal motion, "Newcastle PhD, 2016–2021"]
+  - [Em Rickinson, Quantum turbulence, "Newcastle PhD, 2015–2020"]
+  - [Scott Richardson, Modelling of active suspensions, "Glasgow PhD, 2012–2017"]
+  - [Lucy Sherwin-Robson, Quantum turbulence, "Newcastle PhD, 2011–2016"]
+  - [Elena Ardito, 2D turbulence in Bose–Einstein condensates, "Glasgow MSc, 2013"]

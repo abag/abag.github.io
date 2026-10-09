@@ -1,0 +1,5 @@
+{{- $u := .Destination -}}
+{{- $ext := hasPrefix $u "http" -}}
+{{- if hasPrefix $u "/" }}{{ $u = strings.TrimPrefix "/" $u | relURL }}{{ end -}}
+<a href="{{ $u | safeURL }}"{{ with .Title }} title="{{ . }}"{{ end }}>{{ .Text | safeHTML }}</a>
+{{- /* trailing whitespace trimmed */ -}}

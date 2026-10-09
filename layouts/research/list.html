@@ -1,0 +1,9 @@
+{{ define "main" }}
+<article class="wrap page">
+  <h1>{{ .Title }}</h1>
+  <div class="intro">{{ .Content }}</div>
+  <div class="themes">
+  {{ range .Pages.ByWeight }}{{ partial "theme.html" . }}{{ end }}
+  </div>
+</article>
+{{ end }}

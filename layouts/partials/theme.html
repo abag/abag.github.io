@@ -1,0 +1,8 @@
+<article class="theme" data-theme="{{ .Params.theme }}">
+  {{- with .Params.image }}{{ if os.FileExists (printf "static/%s" .) }}
+  <a class="theme-fig" href="{{ $.RelPermalink }}" tabindex="-1" aria-hidden="true"><img src="{{ . | relURL }}" alt="" loading="lazy"></a>
+  {{- else }}{{ warnf "Missing image: put it at static/%s (run scripts/fetch-assets.sh)" . }}{{ end }}{{ end }}
+  <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+  <p>{{ .Params.summary }}</p>
+  <p class="keywords">{{ .Params.keywords }}</p>
+</article>

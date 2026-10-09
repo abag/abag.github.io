@@ -1,0 +1,849 @@
+# Publications, newest first. Edit this file to add papers; the site rebuilds on push.
+# Fields: authors (list; use "others" for et al.), title, venue, volume, pages, year,
+# theme (qf = quantum fluids, bio = maths biology), pdf (file in static/papers/),
+# arxiv, doi, url + url_label, status (e.g. "submitted"), selected (shown on home page),
+# type (article | incollection | misc), key (BibTeX key).
+#
+# TODO: add the J. R. Soc. Interface paper once you have the final author list, e.g.
+# - authors: [...]
+#   title: Learning spatial transmission maps from sparse outbreak snapshots with diffusion models
+#   venue: Journal of the Royal Society Interface
+#   year: 2026
+#   status: to appear
+#   theme: bio
+#   type: article
+#   key: ...
+- authors: [M. Dopson, N. G. Parker, L. E. Wadkin, A. W. Baggaley, R. J. Pakeman, S. W. Smith, D. M. Evans]
+  title: 'The impacts of grazing pressure by large herbivores on short-tailed field vole (Microtus agrestis) population cycles: results from a long-term upland experiment'
+  year: 2026
+  theme: bio
+  status: in submission
+  type: misc
+  key: dopson2026impacts
+- authors: [S. B. Prasad, N. G. Parker, A. W. Baggaley]
+  title: Crow instability of vortex lines in dipolar superfluids
+  year: 2025
+  venue: Scientific Reports
+  volume: '15'
+  pages: '33364'
+  theme: qf
+  type: article
+  key: prasad2025crow
+- authors: [J. S. Bains, A. W. Baggaley, O. A. Croze]
+  title: Drift velocity of bacterial chemotaxis in dynamic chemical environments
+  year: 2025
+  venue: Philosophical Transactions of the Royal Society A
+  theme: bio
+  type: article
+  key: bains2025drift
+- authors: [S. R. Quick, J. S. Bains, C. Gerdt, B. Walker, E. B. Goldstone, T. Jakuszeit, others]
+  title: A close unicellular animal relative and predator of schistosomes exhibits chemokinesis in response to proteins and peptides from its prey
+  year: 2025
+  venue: PLoS Pathogens
+  volume: '21'
+  pages: e1013440
+  theme: bio
+  doi: 10.1371/journal.ppat.1013440
+  type: article
+  key: quick2025close
+- authors: [R. J. Tattersall, A. W. Baggaley, T. P. Billam]
+  title: 'Out-of-equilibrium behavior of quantum vortices: a comparison of point vortex dynamics and Fokker–Planck evolution'
+  year: 2025
+  venue: Physical Review A
+  volume: '112'
+  pages: '013313'
+  theme: qf
+  type: article
+  key: tattersall2025outofequilibrium
+- authors: [P. Z. Stasiak, Y. Xing, Y. Alihosseini, C. F. Barenghi, A. W. Baggaley, W. Guo, others]
+  title: Experimental and theoretical evidence of universality in superfluid vortex reconnections
+  year: 2025
+  venue: Proceedings of the National Academy of Sciences
+  volume: '122'
+  pages: e2426064122
+  theme: qf
+  doi: 10.1073/pnas.2426064122
+  selected: true
+  type: article
+  key: stasiak2025experimental
+- authors: [I. K. Liu, A. W. Baggaley, C. F. Barenghi, T. S. Wood]
+  title: Vortex avalanches and collective motion in neutron stars
+  year: 2025
+  venue: The Astrophysical Journal
+  volume: '984'
+  pages: '83'
+  theme: qf
+  selected: true
+  type: article
+  key: liu2025vortex
+- authors: [S. B. Prasad, N. G. Parker, A. W. Baggaley]
+  title: Vortex-pair dynamics in three-dimensional homogeneous dipolar superfluids
+  year: 2024
+  venue: Physical Review A
+  volume: '109'
+  pages: '063323'
+  theme: qf
+  doi: 10.1103/PhysRevA.109.063323
+  type: article
+  key: prasad2024vortexpair
+- authors: [M. J. Doyle, A. I. Golov, P. M. Walmsley, A. W. Baggaley]
+  title: Modelling turbulent flow of superfluid ⁴He past a rough solid wall in the T = 0 limit
+  year: 2024
+  venue: Journal of Low Temperature Physics
+  theme: qf
+  type: article
+  key: doyle2024modelling
+- authors: [R. J. Tattersall, A. W. Baggaley, T. P. Billam]
+  title: 'Non-equilibrium dynamics of vortices in two-dimensional quantum gases: determining the dynamical scaling region using the Mahalanobis distance'
+  year: 2024
+  venue: Journal of Low Temperature Physics
+  theme: qf
+  type: article
+  key: tattersall2024nonequilibrium
+- authors: [I. K. Liu, S. B. Prasad, A. W. Baggaley, C. F. Barenghi, T. S. Wood]
+  title: Vortex depinning in a two-dimensional superfluid
+  year: 2024
+  venue: Journal of Low Temperature Physics
+  theme: qf
+  type: article
+  key: liu2024vortex
+- authors: [L. E. Wadkin, J. Holden, R. Ettelaie, M. J. Holmes, J. Smith, A. Golightly, A. W. Baggaley]
+  title: Estimating the reproduction number, R₀, from individual-based models of tree disease spread
+  year: 2024
+  venue: Ecological Modelling
+  volume: '489'
+  pages: '110630'
+  theme: bio
+  selected: true
+  type: article
+  key: wadkin2024estimating
+- authors: [R. Doran, A. W. Baggaley, N. G. Parker]
+  title: Vortex solutions in a binary immiscible Bose–Einstein condensate
+  year: 2024
+  venue: Physical Review A
+  volume: '109'
+  pages: 023318
+  theme: qf
+  doi: 10.1103/PhysRevA.109.023318
+  type: article
+  key: doran2024vortex
+- authors: [P. Z. Stasiak, A. W. Baggaley, G. Krstulovic, C. F. Barenghi, L. Galantucci]
+  title: Cross-component energy transfer in superfluid helium-4
+  year: 2024
+  venue: Journal of Low Temperature Physics
+  theme: qf
+  type: article
+  key: stasiak2024crosscomponent
+- authors: [A. Golightly, L. E. Wadkin, S. Whitaker, A. W. Baggaley, N. G. Parker, T. Kypraios]
+  title: Accelerating Bayesian inference for stochastic epidemic models using incidence data
+  year: 2023
+  venue: Statistics and Computing
+  volume: '33'
+  pages: '134'
+  theme: bio
+  selected: true
+  type: article
+  key: golightly2023accelerating
+- authors: [H. Kreczak, A. W. Baggaley, A. J. Willmott]
+  title: The dynamics of biofouled particles in vortical flows
+  year: 2023
+  venue: Marine Pollution Bulletin
+  volume: '189'
+  pages: '114729'
+  theme: bio
+  pdf: Kreczak_MarinePollution.pdf
+  type: article
+  key: kreczak2023dynamics
+- authors: [J. Laurie, A. W. Baggaley]
+  title: Vorticity locking and pressure dynamics in finite-temperature superfluid turbulence
+  year: 2023
+  venue: Physical Review Fluids
+  volume: '8'
+  pages: '054604'
+  theme: qf
+  doi: 10.1103/PhysRevFluids.8.054604
+  type: article
+  key: laurie2023vorticity
+- authors: [L. E. Wadkin, A. Golightly, J. Branson, A. Hoppit, N. G. Parker, A. W. Baggaley]
+  title: Quantifying invasive pest dynamics through inference of a two-node epidemic network model
+  year: 2023
+  venue: Diversity
+  volume: '15'
+  pages: '496'
+  theme: bio
+  pdf: Wadkin_OPM2.pdf
+  type: article
+  key: wadkin2023quantifying
+- authors: [L. Galantucci, E. Rickinson, A. W. Baggaley, N. G. Parker, C. F. Barenghi]
+  title: Dissipation anomaly in a turbulent quantum fluid
+  year: 2023
+  venue: Physical Review Fluids
+  volume: '8'
+  pages: '034605'
+  theme: qf
+  pdf: qvort_dissipation_anomaly.pdf
+  doi: 10.1103/PhysRevFluids.8.034605
+  selected: true
+  type: article
+  key: galantucci2023dissipation
+- authors: [L. E. Wadkin, J. Branson, A. Hoppit, N. G. Parker, A. Golightly, A. W. Baggaley]
+  title: 'Inference for epidemic models with time-varying infection rates: tracking the dynamics of oak processionary moth in the UK'
+  year: 2022
+  venue: Ecology and Evolution
+  volume: '12'
+  pages: e8871
+  theme: bio
+  pdf: Wadkin_OPM1.pdf
+  doi: 10.1002/ece3.8871
+  url: https://doi.org/10.1101/2021.12.09.471950
+  url_label: bioRxiv
+  type: article
+  key: wadkin2022inference
+- authors: [G. S. E. Grimes, A. W. Baggaley]
+  title: Approach and separation of bundles of quantized vorticity
+  year: 2022
+  venue: Physical Review Fluids
+  volume: '7'
+  pages: '034701'
+  theme: qf
+  pdf: Grimes_bundle.pdf
+  doi: 10.1103/PhysRevFluids.7.034701
+  type: article
+  key: grimes2022approach
+- authors: [H. Kreczak, A. J. Willmott, A. W. Baggaley]
+  title: Subsurface dynamics of buoyant microplastics subject to algal biofouling
+  year: 2021
+  venue: Limnology and Oceanography
+  volume: '66'
+  pages: 3287–3299
+  theme: bio
+  pdf: Kreczak_plastic1.pdf
+  type: article
+  key: kreczak2021subsurface
+- authors: [L. Galantucci, C. F. Barenghi, N. G. Parker, A. W. Baggaley]
+  title: Mesoscale helicity distinguishes Vinen from Kolmogorov turbulence in helium-II
+  year: 2021
+  venue: Physical Review B
+  volume: '103'
+  pages: '144503'
+  theme: qf
+  pdf: Galantucci_helicity.pdf
+  arxiv: '1805.09005'
+  doi: 10.1103/PhysRevB.103.144503
+  type: article
+  key: galantucci2021mesoscale
+- authors: [S. Orozco-Fuentes, L. E. Wadkin, I. Neganova, M. Lako, R. A. Barrio-Paredes, A. W. Baggaley, N. G. Parker, A. Shukurov]
+  title: 'OCT4 expression in human embryonic stem cells: spatio-temporal dynamics and fate transitions'
+  year: 2021
+  venue: Physical Biology
+  volume: '18'
+  pages: '026003'
+  theme: bio
+  pdf: Wadkin_2021_Phys._Biol._18_026003.pdf
+  url: https://www.biorxiv.org/content/10.1101/2020.05.02.074435v1
+  url_label: bioRxiv
+  type: article
+  key: orozcofuentes2021oct4
+- authors: [L. Galantucci, M. Sciacca, N. G. Parker, A. W. Baggaley, C. F. Barenghi]
+  title: Classical and quantum vortex leapfrogging in two-dimensional channels
+  year: 2021
+  venue: Journal of Fluid Mechanics
+  volume: '912'
+  pages: '9'
+  theme: qf
+  pdf: Galantucci_leapfrog.pdf
+  arxiv: '2006.07196'
+  type: article
+  key: galantucci2021classical
+- authors: [E. Rickinson, C. F. Barenghi, Y. A. Sergeev, A. W. Baggaley]
+  title: Superfluid turbulence driven by cylindrically symmetric thermal counterflow
+  year: 2020
+  venue: Physical Review B
+  volume: '101'
+  pages: '134519'
+  theme: qf
+  pdf: Rickinson_radial_counterflow.pdf
+  arxiv: '2002.09939'
+  doi: 10.1103/PhysRevB.101.134519
+  type: article
+  key: rickinson2020superfluid
+- authors: [L. Galantucci, A. W. Baggaley, C. F. Barenghi, G. Krstulovic]
+  title: A new self-consistent approach of quantum turbulence in superfluid helium
+  year: 2020
+  venue: The European Physical Journal Plus
+  volume: '135'
+  pages: '547'
+  theme: qf
+  pdf: GalantucciFOUCAULT.pdf
+  arxiv: '2001.01616'
+  type: article
+  key: galantucci2020new
+- authors: [J. Laurie, A. W. Baggaley]
+  title: Coarse-grained pressure dynamics in superfluid turbulence
+  year: 2020
+  venue: Physical Review Fluids
+  volume: '5'
+  pages: '014603'
+  theme: qf
+  pdf: LauriePressure.pdf
+  arxiv: '1910.00276'
+  doi: 10.1103/PhysRevFluids.5.014603
+  type: article
+  key: laurie2020coarsegrained
+- authors: [R. G. Cooper, M. Mesgarnezhad, A. W. Baggaley, C. F. Barenghi]
+  title: Knot spectrum of turbulence
+  year: 2019
+  venue: Scientific Reports
+  volume: '9'
+  pages: '10545'
+  theme: qf
+  pdf: quantum_knots.pdf
+  arxiv: '1907.03420'
+  type: article
+  key: cooper2019knot
+- authors: [S. Orozco-Fuentes, I. Neganova, L. E. Wadkin, A. W. Baggaley, R. A. Barrio, M. Lako, A. Shukurov, N. G. Parker]
+  title: Quantification of the morphological characteristics of hESC colonies
+  year: 2019
+  venue: Scientific Reports
+  volume: '9'
+  theme: bio
+  pdf: Sirio_stem_cell1.pdf
+  arxiv: '1905.07279'
+  doi: 10.1038/s41598-019-53719-9
+  type: article
+  key: orozcofuentes2019quantification
+- authors: [L. Galantucci, A. W. Baggaley, N. G. Parker, C. F. Barenghi]
+  title: Crossover from interaction to driven regimes in quantum vortex reconnections
+  year: 2019
+  venue: Proceedings of the National Academy of Sciences
+  volume: '116'
+  theme: qf
+  pdf: PNAS_recon.pdf
+  arxiv: '1812.00473'
+  type: article
+  key: galantucci2019crossover
+- authors: [E. Rickinson, N. G. Parker, A. W. Baggaley, C. F. Barenghi]
+  title: Inviscid diffusion of vorticity in low-temperature superfluid helium
+  year: 2019
+  venue: Physical Review B
+  volume: '99'
+  pages: '224501'
+  theme: qf
+  pdf: 3Ddiffusion.pdf
+  arxiv: '1811.06428'
+  doi: 10.1103/PhysRevB.99.224501
+  type: article
+  key: rickinson2019inviscid
+- authors: [F. Carrer, G. R. Sarson, A. W. Baggaley, A. Shukurov, D. E. Angelucci]
+  title: Ethnoarchaeology-based modelling to investigate economic transformations and land-use change in the Alpine uplands
+  year: 2019
+  venue: Integrating Qualitative and Social Science Factors in Archaeological Modelling (Springer)
+  pages: 185–216
+  theme: bio
+  pdf: IntegratingQualitativeAndSocialFactos.pdf
+  type: incollection
+  key: carrer2019ethnoarchaeologybased
+- authors: [S. Orozco-Fuentes, G. Griffiths, M. J. Holmes, R. Ettelaie, J. Smith, A. W. Baggaley, N. G. Parker]
+  title: Early warning signals in plant disease outbreaks
+  year: 2019
+  venue: Ecological Modelling
+  volume: '393'
+  pages: 12–19
+  theme: bio
+  pdf: tree_disease_lattice.pdf
+  arxiv: '1802.07562'
+  selected: true
+  type: article
+  key: orozcofuentes2019early
+- authors: [T. Bland, G. W. Stagg, L. Galantucci, A. W. Baggaley, N. G. Parker]
+  title: Quantum ferrofluid turbulence
+  year: 2018
+  venue: Physical Review Letters
+  volume: '121'
+  pages: '174501'
+  theme: qf
+  pdf: QFerrofluid_turb.pdf
+  arxiv: '1706.02660'
+  doi: 10.1103/PhysRevLett.121.174501
+  type: article
+  key: bland2018quantum
+- authors: [E. Rickinson, N. G. Parker, A. W. Baggaley, C. F. Barenghi]
+  title: Diffusion of quantum vortices
+  year: 2018
+  venue: Physical Review A
+  volume: '98'
+  pages: 023608
+  theme: qf
+  pdf: BEC_2D_diffusion.pdf
+  arxiv: '1805.09187'
+  doi: 10.1103/PhysRevA.98.023608
+  type: article
+  key: rickinson2018diffusion
+- authors: [A. W. Baggaley, N. G. Parker]
+  title: Kelvin–Helmholtz instability in a single-component atomic superfluid
+  year: 2018
+  venue: Physical Review A
+  volume: '97'
+  pages: 053608
+  theme: qf
+  pdf: KHinstability.pdf
+  arxiv: '1803.00277'
+  doi: 10.1103/PhysRevA.97.053608
+  type: article
+  key: baggaley2018kelvinhelmholtz
+- authors: [A. W. Baggaley, C. F. Barenghi]
+  title: Decay of homogeneous two-dimensional quantum turbulence
+  year: 2018
+  venue: Physical Review A
+  volume: '97'
+  pages: '033601'
+  theme: qf
+  pdf: BEC_2D_decay.pdf
+  arxiv: '1711.07533'
+  doi: 10.1103/PhysRevA.97.033601
+  type: article
+  key: baggaley2018decay
+- authors: [S. I. Heath-Richardson, A. W. Baggaley, N. A. Hill]
+  title: Gyrotaxis suppresses chaotic trajectories of swimming particles in three-dimensional flows
+  year: 2018
+  venue: Physical Review Fluids
+  volume: '3'
+  pages: '023102'
+  theme: bio
+  pdf: ABC_Gyrotaxis.pdf
+  doi: 10.1103/PhysRevFluids.3.023102
+  type: article
+  key: heathrichardson2018gyrotaxis
+- authors: [M. Mesgarnezhad, R. G. Cooper, A. W. Baggaley, C. F. Barenghi]
+  title: Helicity and topology of a small region of quantum vorticity
+  year: 2018
+  venue: Fluid Dynamics Research
+  volume: '50'
+  pages: '011403'
+  theme: qf
+  pdf: Mae_helicity.pdf
+  arxiv: '1610.10024'
+  type: article
+  key: mesgarnezhad2018helicity
+- authors: [V. Tsepelin, A. W. Baggaley, Y. A. Sergeev, C. F. Barenghi, S. N. Fisher, G. R. Pickett, M. J. Jackson, N. Suramlishvili]
+  title: 'Visualization of quantum turbulence in superfluid ³He-B: combined numerical and experimental study of Andreev reflection'
+  year: 2017
+  venue: Physical Review B
+  volume: '96'
+  pages: '054510'
+  theme: qf
+  pdf: quasi_lancaster_long.pdf
+  arxiv: '1706.01791'
+  doi: 10.1103/PhysRevB.96.054510
+  type: article
+  key: tsepelin2017visualization
+- authors: [C. F. Barenghi, Y. A. Sergeev, A. W. Baggaley]
+  title: Regimes of turbulence without an energy cascade
+  year: 2016
+  venue: Scientific Reports
+  volume: '6'
+  pages: '35701'
+  theme: qf
+  pdf: NoCascade.pdf
+  arxiv: '1609.09705'
+  doi: 10.1038/srep35701
+  type: article
+  key: barenghi2016regimes
+- authors: [A. W. Baggaley]
+  title: Stability of model flocks in a vortical flow
+  year: 2016
+  venue: Physical Review E
+  volume: '93'
+  pages: 063109
+  theme: bio
+  pdf: spin_flock.pdf
+  arxiv: '1606.00657'
+  doi: 10.1103/PhysRevE.93.063109
+  type: article
+  key: baggaley2016stability
+- authors: [J. Laurie, A. W. Baggaley]
+  title: 'A note on the propagation of quantized vortex rings through a quantum turbulence tangle: energy transport or energy dissipation?'
+  year: 2015
+  venue: Journal of Low Temperature Physics
+  volume: '180'
+  pages: 95–108
+  theme: qf
+  pdf: qvort_ring_prop.pdf
+  arxiv: '1410.2738'
+  doi: 10.1007/s10909-015-1287-9
+  type: article
+  key: laurie2015note
+- authors: [J. Laurie, A. W. Baggaley]
+  title: Reconnection dynamics and normal fluid mutual friction in superfluid turbulence
+  year: 2015
+  venue: Journal of Low Temperature Physics
+  volume: '180'
+  pages: 82–94
+  theme: qf
+  pdf: qvort_recon_MF.pdf
+  arxiv: '1410.2515'
+  doi: 10.1007/s10909-014-1268-4
+  type: article
+  key: laurie2015reconnection
+- authors: [A. W. Baggaley, V. Tsepelin, C. F. Barenghi, S. N. Fisher, G. R. Pickett, Y. A. Sergeev, N. Suramlishvili]
+  title: 'Visualizing pure quantum turbulence in superfluid ³He: Andreev reflection and its spectral properties'
+  year: 2015
+  venue: Physical Review Letters
+  volume: '115'
+  pages: '015302'
+  theme: qf
+  pdf: quasi_lancaster.pdf
+  arxiv: '1503.08157'
+  doi: 10.1103/PhysRevLett.115.015302
+  type: article
+  key: baggaley2015visualizing
+- authors: [A. W. Baggaley]
+  title: Model flocks in a steady vortical flow
+  year: 2015
+  venue: Physical Review E
+  volume: '91'
+  pages: 053019
+  theme: bio
+  pdf: TGV_flocking.pdf
+  arxiv: '1505.02152'
+  doi: 10.1103/PhysRevE.91.053019
+  type: article
+  key: baggaley2015model
+- authors: [L. K. Sherwin-Robson, C. F. Barenghi, A. W. Baggaley]
+  title: Local and nonlocal dynamics in superfluid turbulence
+  year: 2015
+  venue: Physical Review B
+  volume: '91'
+  pages: '104517'
+  theme: qf
+  pdf: qvort_local_nonlocal.pdf
+  arxiv: '1409.1443'
+  doi: 10.1103/PhysRevB.91.104517
+  type: article
+  key: sherwinrobson2015local
+- authors: [A. W. Baggaley, J. Laurie]
+  title: Thermal counterflow in a periodic channel with solid boundaries
+  year: 2015
+  venue: Journal of Low Temperature Physics
+  volume: '178'
+  pages: 35–52
+  theme: qf
+  pdf: laurie_channel1.pdf
+  arxiv: '1310.3712'
+  type: article
+  key: baggaley2015thermal
+- authors: [D. H. Wacks, A. W. Baggaley, C. F. Barenghi]
+  title: Large-scale superfluid vortex rings at nonzero temperatures
+  year: 2014
+  venue: Physical Review B
+  volume: '90'
+  pages: '224514'
+  theme: qf
+  pdf: wacks_rings_2.pdf
+  arxiv: '1412.1917'
+  doi: 10.1103/PhysRevB.90.224514
+  type: article
+  key: wacks2014largescale
+- authors: [D. A. Henderson, A. W. Baggaley, A. Shukurov, R. J. Boys, G. R. Sarson, A. Golightly]
+  title: 'Regional variations in the European Neolithic dispersal: the role of the coastlines'
+  year: 2014
+  venue: Antiquity
+  volume: '88'
+  pages: 1291–1302
+  theme: bio
+  pdf: henderson_antiquity.pdf
+  type: article
+  key: henderson2014regional
+- authors: [R. Hänninen, A. W. Baggaley]
+  title: Vortex filament method as a tool for computational visualization of quantum turbulence
+  year: 2014
+  venue: Proceedings of the National Academy of Sciences
+  volume: '111'
+  pages: 4667–4674
+  theme: qf
+  pdf: risto_PNAS.pdf
+  arxiv: '1305.2753'
+  type: article
+  key: hanninen2014vortex
+- authors: [A. W. Baggaley, C. F. Barenghi]
+  title: Acceleration statistics in thermally driven superfluid turbulence
+  year: 2014
+  venue: Physical Review E
+  volume: '89'
+  pages: '033006'
+  theme: qf
+  pdf: qvort_acc_stat.pdf
+  arxiv: '1403.0411'
+  doi: 10.1103/PhysRevE.89.033006
+  type: article
+  key: baggaley2014acceleration
+- authors: [D. H. Wacks, A. W. Baggaley, C. F. Barenghi]
+  title: Coherent laminar and turbulent motion of toroidal vortex bundles
+  year: 2014
+  venue: Physics of Fluids
+  volume: '26'
+  pages: '027102'
+  theme: qf
+  pdf: wacks_ring_paper.pdf
+  arxiv: '1401.6468'
+  type: article
+  key: wacks2014coherent
+- authors: [A. W. Baggaley, J. Laurie]
+  title: The Kelvin-wave cascade in the vortex filament model
+  year: 2014
+  venue: Physical Review B
+  volume: '89'
+  pages: '014504'
+  theme: qf
+  pdf: KWC_Laurie.pdf
+  arxiv: '1204.4034'
+  doi: 10.1103/PhysRevB.89.014504
+  selected: true
+  type: article
+  key: baggaley2014kelvinwave
+- authors: [A. W. Baggaley, C. F. Barenghi, Y. A. Sergeev]
+  title: Three-dimensional inverse energy transfer induced by vortex reconnections
+  year: 2014
+  venue: Physical Review E
+  volume: '89'
+  pages: '013002'
+  theme: qf
+  pdf: qvort_inverse.pdf
+  arxiv: '1208.5204'
+  doi: 10.1103/PhysRevE.89.013002
+  type: article
+  key: baggaley2014threedimensional
+- authors: [A. W. Baggaley, S. Laizet]
+  title: Vortex line density in counterflowing He II with laminar and turbulent normal fluid velocity profiles
+  year: 2013
+  venue: Physics of Fluids
+  volume: '25'
+  pages: '115101'
+  theme: qf
+  pdf: channel.pdf
+  arxiv: '1310.5890'
+  type: article
+  key: baggaley2013vortex
+- authors: [A. W. Baggaley, R. J. Boys, G. R. Sarson, A. Golightly, A. Shukurov]
+  title: Inference for a reaction–diffusion model of population dynamics in the Neolithic period
+  year: 2012
+  venue: The Annals of Applied Statistics
+  volume: '6'
+  pages: 1352–1376
+  theme: bio
+  pdf: neo_stats.pdf
+  arxiv: '1301.1525'
+  type: article
+  key: baggaley2012inference
+- authors: [S. Zuccher, M. Caliari, A. W. Baggaley, C. F. Barenghi]
+  title: Quantum vortex reconnections
+  year: 2012
+  venue: Physics of Fluids
+  volume: '24'
+  pages: '125108'
+  theme: qf
+  pdf: zuccher_recon.pdf
+  arxiv: '1206.2498'
+  type: article
+  key: zuccher2012quantum
+- authors: [A. W. Baggaley, J. Laurie, C. F. Barenghi]
+  title: Vortex-density fluctuations, energy spectra, and vortical regions in superfluid turbulence
+  year: 2012
+  venue: Physical Review Letters
+  volume: '109'
+  pages: '205304'
+  theme: qf
+  pdf: qvort_smooth.pdf
+  arxiv: '1207.7296'
+  doi: 10.1103/PhysRevLett.109.205304
+  type: article
+  key: baggaley2012vortexdensity
+- authors: [A. W. Baggaley, L. K. Sherwin, C. F. Barenghi, Y. A. Sergeev]
+  title: Thermally and mechanically driven quantum turbulence in helium II
+  year: 2012
+  venue: Physical Review B
+  volume: '86'
+  pages: '104501'
+  theme: qf
+  pdf: qvort_counterflow.pdf
+  arxiv: '1203.6182'
+  doi: 10.1103/PhysRevB.86.104501
+  type: article
+  key: baggaley2012thermally
+- authors: [A. W. Baggaley, G. R. Sarson, A. Shukurov, R. J. Boys, A. Golightly]
+  title: Bayesian inference for a wavefront model of the Neolithization of Europe
+  year: 2012
+  venue: Physical Review E
+  volume: '86'
+  pages: '016105'
+  theme: bio
+  pdf: neo_applied.pdf
+  arxiv: '1203.4471'
+  doi: 10.1103/PhysRevE.86.016105
+  type: article
+  key: baggaley2012bayesian
+- authors: [N. Suramlishvili, A. W. Baggaley, C. F. Barenghi, Y. A. Sergeev]
+  title: Cross-sections of Andreev scattering by quantized vortex rings in ³He-B
+  year: 2012
+  venue: Physical Review B
+  volume: '85'
+  pages: '174526'
+  theme: qf
+  pdf: quasi_ring.pdf
+  arxiv: '1202.2987'
+  doi: 10.1103/PhysRevB.85.174526
+  type: article
+  key: suramlishvili2012crosssections
+- authors: [A. W. Baggaley]
+  title: The importance of vortex bundles in quantum turbulence at absolute zero
+  year: 2012
+  venue: Physics of Fluids
+  volume: '24'
+  pages: 055109
+  theme: qf
+  pdf: criss_cross_bundle.pdf
+  doi: 10.1063/1.4719158
+  type: article
+  key: baggaley2012importance
+- authors: [A. W. Baggaley, C. F. Barenghi, A. Shukurov, Y. A. Sergeev]
+  title: Coherent vortex structures in quantum turbulence
+  year: 2012
+  venue: Europhysics Letters
+  volume: '98'
+  pages: '26002'
+  theme: qf
+  pdf: structures.pdf
+  arxiv: '1109.4409'
+  doi: 10.1209/0295-5075/98/26002
+  type: article
+  key: baggaley2012coherent
+- authors: [A. W. Baggaley]
+  title: The sensitivity of the vortex filament method to different reconnection models
+  year: 2012
+  venue: Journal of Low Temperature Physics
+  volume: '168'
+  pages: 18–30
+  theme: qf
+  pdf: qvort_recon.pdf
+  type: article
+  key: baggaley2012sensitivity
+- authors: [A. W. Baggaley, C. F. Barenghi, Y. A. Sergeev]
+  title: Quasiclassical and ultraquantum decay of superfluid turbulence
+  year: 2012
+  venue: Physical Review B
+  volume: '85'
+  pages: '060501'
+  theme: qf
+  pdf: qvort_decay.pdf
+  arxiv: '1111.3626'
+  doi: 10.1103/PhysRevB.85.060501
+  type: article
+  key: baggaley2012quasiclassical
+- authors: [A. W. Baggaley, C. F. Barenghi]
+  title: Tree method for quantum vortex dynamics
+  year: 2012
+  venue: Journal of Low Temperature Physics
+  volume: '166'
+  pages: 3–20
+  theme: qf
+  pdf: qvort_paper.pdf
+  arxiv: '1108.1119'
+  type: article
+  key: baggaley2012tree
+- authors: [A. W. Baggaley, C. F. Barenghi]
+  title: Quantum turbulent velocity statistics and quasiclassical limit
+  year: 2011
+  venue: Physical Review E
+  volume: '84'
+  pages: '067301'
+  theme: qf
+  pdf: qvort_vel_stat.pdf
+  arxiv: '1110.5767'
+  doi: 10.1103/PhysRevE.84.067301
+  type: article
+  key: baggaley2011quantum
+- authors: [A. W. Baggaley, C. F. Barenghi]
+  title: Turbulent cascade of Kelvin waves on vortex filaments
+  year: 2011
+  venue: 'Journal of Physics: Conference Series'
+  volume: '318'
+  pages: '062001'
+  theme: qf
+  url: https://iopscience.iop.org/1742-6596/318/6/062001
+  url_label: journal
+  type: article
+  key: baggaley2011turbulent
+- authors: [A. C. White, N. P. Proukakis, A. J. Youd, D. H. Wacks, A. W. Baggaley, C. F. Barenghi]
+  title: Turbulence in a Bose–Einstein condensate
+  year: 2011
+  venue: 'Journal of Physics: Conference Series'
+  volume: '318'
+  pages: '062003'
+  theme: qf
+  url: https://iopscience.iop.org/1742-6596/318/6/062003
+  url_label: journal
+  type: article
+  key: white2011turbulence
+- authors: [A. W. Baggaley, C. F. Barenghi]
+  title: Vortex-density fluctuations in quantum turbulence
+  year: 2011
+  venue: Physical Review B
+  volume: '84'
+  pages: '020504'
+  theme: qf
+  pdf: qvort_fluc.pdf
+  arxiv: '1103.6139'
+  doi: 10.1103/PhysRevB.84.020504
+  type: article
+  key: baggaley2011vortexdensity
+- authors: [A. W. Baggaley, C. F. Barenghi]
+  title: Spectrum of turbulent Kelvin-waves cascade in superfluid helium
+  year: 2011
+  venue: Physical Review B
+  volume: '83'
+  pages: '134509'
+  theme: qf
+  pdf: KWC_PRB.pdf
+  arxiv: '1006.2934'
+  doi: 10.1103/PhysRevB.83.134509
+  type: article
+  key: baggaley2011spectrum
+- authors: [A. W. Baggaley, C. F. Barenghi, A. Shukurov, K. Subramanian]
+  title: Fluctuation dynamo based on magnetic reconnections
+  year: 2010
+  venue: Astronomische Nachrichten
+  volume: '331'
+  pages: 46–62
+  pdf: Baggaley_AN_09.pdf
+  arxiv: '0910.5392'
+  type: article
+  key: baggaley2010fluctuation
+- authors: [A. W. Baggaley, C. F. Barenghi, A. Shukurov, K. Subramanian]
+  title: Reconnecting flux-rope dynamo
+  year: 2009
+  venue: Physical Review E
+  volume: '80'
+  pages: '055301'
+  pdf: FRD_PRE.pdf
+  arxiv: '0906.1095'
+  doi: 10.1103/PhysRevE.80.055301
+  type: article
+  key: baggaley2009reconnecting
+- authors: [A. W. Baggaley, C. F. Barenghi, A. Shukurov]
+  title: Stretching in a model of a turbulent flow
+  year: 2009
+  venue: Physica D
+  volume: '238'
+  pages: 365–369
+  pdf: Stretching.pdf
+  arxiv: '0801.4266'
+  type: article
+  key: baggaley2009stretching
+- authors: [A. W. Baggaley]
+  title: Applications of synthetic turbulence to filament models of magnetic flux ropes and quantum turbulence
+  year: 2012
+  venue: ERCOFTAC Bulletin
+  volume: '92'
+  other: true
+  type: misc
+  key: baggaley2012applications

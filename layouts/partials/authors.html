@@ -1,0 +1,13 @@
+{{- $list := slice -}}
+{{- range . -}}
+  {{- if eq . "others" }}{{ $list = $list | append "et al." -}}
+  {{- else if eq . "A. W. Baggaley" }}{{ $list = $list | append (printf "<span class=\"me\">%s</span>" .) -}}
+  {{- else }}{{ $list = $list | append . }}{{ end -}}
+{{- end -}}
+{{- $n := len $list -}}
+{{- if and (gt $n 1) (eq (index $list (sub $n 1)) "et al.") -}}
+  {{- delimit (first (sub $n 1) $list) ", " | safeHTML }} et al.
+{{- else if eq $n 1 }}{{ index $list 0 | safeHTML -}}
+{{- else if eq $n 2 }}{{ delimit $list " and " | safeHTML -}}
+{{- else }}{{ delimit (first (sub $n 1) $list) ", " | safeHTML }}, and {{ index $list (sub $n 1) | safeHTML -}}
+{{- end -}}

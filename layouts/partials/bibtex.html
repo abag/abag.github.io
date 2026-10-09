@@ -1,0 +1,17 @@
+{{- $p := . -}}
+{{- $type := $p.type | default "article" -}}
+{{- $l := slice (printf "@%s{%s," $type $p.key) (printf "  title = {%s}," $p.title) -}}
+{{- $l = $l | append (printf "  author = {%s}," (delimit $p.authors " and ")) -}}
+{{- with $p.venue -}}
+  {{- if eq $type "article" }}{{ $l = $l | append (printf "  journal = {%s}," .) -}}
+  {{- else if eq $type "incollection" }}{{ $l = $l | append (printf "  booktitle = {%s}," .) -}}
+  {{- else }}{{ $l = $l | append (printf "  howpublished = {%s}," .) }}{{ end -}}
+{{- end -}}
+{{- with $p.volume }}{{ $l = $l | append (printf "  volume = {%s}," .) }}{{ end -}}
+{{- with $p.pages }}{{ $l = $l | append (printf "  pages = {%s}," (replace . "–" "--")) }}{{ end -}}
+{{- $l = $l | append (printf "  year = {%v}," $p.year) -}}
+{{- with $p.doi }}{{ $l = $l | append (printf "  doi = {%s}," .) }}{{ end -}}
+{{- with $p.arxiv }}{{ $l = $l | append (printf "  eprint = {%s}," .) | append "  archivePrefix = {arXiv}," }}{{ end -}}
+{{- with $p.status }}{{ $l = $l | append (printf "  note = {%s}," .) }}{{ end -}}
+{{- $l = $l | append "}" -}}
+{{- delimit $l "\n" -}}

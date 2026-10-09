@@ -1,0 +1,5 @@
+<ol class="news">
+{{ range . }}
+  <li><span class="news-date">{{ .date }}</span><div class="news-text">{{ .text | markdownify }}</div></li>
+{{ end }}
+</ol>

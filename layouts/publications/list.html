@@ -1,0 +1,25 @@
+{{ define "main" }}
+{{ $all := hugo.Data.publications }}
+{{ $main := where $all "other" "!=" true }}
+<article class="wrap page">
+  <h1>{{ .Title }}</h1>
+  {{ .Content }}
+  <div class="pub-filter" role="group" aria-label="Filter by theme" hidden>
+    <button type="button" data-filter="all" aria-pressed="true">All <span class="count">{{ len $main }}</span></button>
+    <button type="button" data-filter="qf" aria-pressed="false"><span class="swatch swatch-qf" aria-hidden="true"></span>Quantum fluids <span class="count">{{ len (where $main "theme" "qf") }}</span></button>
+    <button type="button" data-filter="bio" aria-pressed="false"><span class="swatch swatch-bio" aria-hidden="true"></span>Maths biology <span class="count">{{ len (where $main "theme" "bio") }}</span></button>
+  </div>
+  {{ $years := slice }}{{ range $main }}{{ $years = $years | append .year }}{{ end }}
+  {{ range (uniq $years) }}
+    {{ $y := . }}
+    <section class="year-group" data-year="{{ $y }}">
+      <h2 class="year">{{ $y }}</h2>
+      <ul class="pubs">{{ range where $main "year" $y }}{{ partial "pub.html" . }}{{ end }}</ul>
+    </section>
+  {{ end }}
+  <section class="year-group">
+    <h2>Other</h2>
+    <ul class="pubs">{{ range where $all "other" true }}{{ partial "pub.html" . }}{{ end }}</ul>
+  </section>
+</article>
+{{ end }}

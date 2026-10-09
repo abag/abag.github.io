@@ -1,0 +1,30 @@
+# News items, newest first. `text` is Markdown. The home page shows the first four.
+# These were drafted from your CV: please check the dates and wording.
+- date: Oct 2026
+  text: >-
+    Our new undergraduate programme, the
+    [BSc in Mathematics, Artificial Intelligence and Real-world Systems](https://www.lancaster.ac.uk/study/undergraduate/courses/mathematics-artificial-intelligence-and-realworld-systems-mars-bsc-hons-g1i4/2026/),
+    welcomes its first students. I am Director of Studies for the programme and teach the new first-year module
+    [MATH4120: Mathematical Modelling and Programming](https://math4120.pages.dev/).
+- date: Oct 2026
+  text: >-
+    I take over as lead of the [MARS](https://www.lancaster.ac.uk/maths/research/mars/) section in the
+    School of Mathematical Sciences.
+- date: 2026
+  text: >-
+    *Learning spatial transmission maps from sparse outbreak snapshots with diffusion models* is to appear in
+    the **Journal of the Royal Society Interface**.
+- date: Sep 2025
+  text: >-
+    I joined Lancaster University as Professor of Mathematics and AI in
+    [MARS: Mathematics for AI in Real-world Systems](https://www.lancaster.ac.uk/maths/research/mars/),
+    after fifteen years at Newcastle and Glasgow.
+- date: 2025
+  text: >-
+    Our paper with the Guo group,
+    [*Experimental and theoretical evidence of universality in superfluid vortex reconnections*](https://doi.org/10.1073/pnas.2426064122),
+    is out in **PNAS**.
+- date: 2025
+  text: >-
+    *Vortex avalanches and collective motion in neutron stars*, with I. K. Liu, C. F. Barenghi and T. S. Wood,
+    is published in **The Astrophysical Journal**.

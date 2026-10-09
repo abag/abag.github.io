@@ -1,0 +1,12 @@
+{{- $img := .Get "img" -}}
+{{- $has := and $img (os.FileExists (printf "static/%s" $img)) -}}
+{{- if and $img (not $has) }}{{ warnf "Missing image: put it at static/%s (run scripts/fetch-assets.sh)" $img }}{{ end -}}
+<section class="finding{{ if not $has }} no-fig{{ end }}">
+  {{- if $has }}
+  <a class="finding-fig" href="{{ $img | relURL }}"><img src="{{ $img | relURL }}" alt="{{ .Get "alt" }}" loading="lazy"></a>
+  {{- end }}
+  <div class="finding-text">
+    {{- with .Get "title" }}<h3>{{ . }}</h3>{{ end }}
+    {{ .Inner | $.Page.RenderString (dict "display" "block") }}
+  </div>
+</section>

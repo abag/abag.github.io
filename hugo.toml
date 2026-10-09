@@ -1,0 +1,45 @@
+# baseURL is overridden by the GitHub Actions workflow, so this works for
+# username.github.io and for project pages (username.github.io/repo/) alike.
+baseURL = "https://github.com/abag"
+locale = "en-gb"
+title = "Andrew Baggaley"
+enableRobotsTXT = true
+disableKinds = ["taxonomy", "term", "RSS"]
+
+[params]
+  description = "Andrew Baggaley: Professor of Mathematics and AI at Lancaster University, working on quantum fluids and turbulence and on mathematical biology, especially the spread of plant disease."
+  role = "Professor of Mathematics and AI"
+  email_user = "a.baggaley1"
+  email_domain = "lancaster.ac.uk"
+  phone = "+44 (0)1524 593960"
+  address = ["School of Mathematical Sciences", "Lancaster University", "Lancaster LA1 4YF", "United Kingdom"]
+  orcid = "https://orcid.org/0000-0002-6813-2443"
+  # Add these when you have them, e.g. scholar = "https://scholar.google.com/citations?user=..."
+  scholar = ""
+  github = ""
+  updated = "October 2026"
+
+[markup.goldmark.renderer]
+  unsafe = true
+
+[menus]
+  [[menus.main]]
+    name = "Research"
+    pageRef = "/research"
+    weight = 1
+  [[menus.main]]
+    name = "Publications"
+    pageRef = "/publications"
+    weight = 2
+  [[menus.main]]
+    name = "News"
+    pageRef = "/news"
+    weight = 3
+  [[menus.main]]
+    name = "Teaching"
+    pageRef = "/teaching"
+    weight = 4
+  [[menus.main]]
+    name = "CV"
+    pageRef = "/cv"
+    weight = 5

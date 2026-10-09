@@ -1,0 +1,51 @@
+{{ define "main" }}
+{{ partial "hero.html" . }}
+
+<section class="wrap about" aria-labelledby="about">
+  <div class="about-text">
+    <h2 id="about">About</h2>
+    {{ .Content }}
+    <p class="contact-line">{{ partial "email.html" . }}</p>
+    <p class="profile-links"><a href="{{ site.Params.orcid }}">ORCID</a>{{ with site.Params.scholar }}, <a href="{{ . }}">Google Scholar</a>{{ end }}{{ with site.Params.github }}, <a href="{{ . }}">GitHub</a>{{ end }}, <a href="{{ "cv/" | relURL }}">CV</a></p>
+  </div>
+  {{ partial "static-img.html" (dict "src" "img/portrait.jpg" "alt" "Andrew Baggaley with his two dogs on a fell walk" "class" "portrait" "attrs" "width=\"720\" height=\"960\"") }}
+</section>
+
+<section class="wrap" aria-labelledby="research">
+  <h2 id="research"><a href="{{ "research/" | relURL }}">Research</a></h2>
+  <div class="themes">
+  {{ range (where site.RegularPages "Section" "research").ByWeight }}
+    {{ partial "theme.html" . }}
+  {{ end }}
+  </div>
+</section>
+
+<section class="wrap" aria-labelledby="news">
+  <h2 id="news"><a href="{{ "news/" | relURL }}">News</a></h2>
+  {{ partial "news.html" (first 4 hugo.Data.news) }}
+  <p class="more"><a href="{{ "news/" | relURL }}">All news</a></p>
+</section>
+
+<section class="wrap" aria-labelledby="pubs">
+  <h2 id="pubs"><a href="{{ "publications/" | relURL }}">Selected publications</a></h2>
+  <ul class="pubs">
+  {{ range where hugo.Data.publications "selected" true }}{{ partial "pub.html" . }}{{ end }}
+  </ul>
+  <p class="more"><a href="{{ "publications/" | relURL }}">All {{ len hugo.Data.publications }} publications</a></p>
+</section>
+
+<section class="wrap" aria-labelledby="group">
+  <h2 id="group">Research group</h2>
+  <ul class="group">
+  {{ range hugo.Data.group.current }}
+    <li><strong>{{ .name }}</strong> <span class="muted">({{ .role }})</span><br>{{ .topic }}</li>
+  {{ end }}
+  </ul>
+  <p class="group-note">I am happy to supervise PhD projects in quantum fluids and turbulence, in mathematical biology and plant health, and at their interfaces with statistical inference and machine learning. Projects can lean towards large-scale simulation, towards modelling and analysis, or towards inference from data. Please get in touch to discuss ideas. Former students and postdocs are listed on my <a href="{{ "cv/" | relURL }}">CV page</a>.</p>
+</section>
+{{ end }}
+
+{{ define "scripts" }}
+{{ $hero := resources.Get "js/hero.js" | minify | fingerprint }}
+<script src="{{ $hero.RelPermalink }}" defer></script>
+{{ end }}

@@ -1,0 +1,50 @@
+<section class="hero" aria-labelledby="hero-name">
+  <div class="wrap">
+    <h1 id="hero-name">{{ site.Title }}</h1>
+    <p class="role">{{ site.Params.role }}, Lancaster University</p>
+  </div>
+  <figure class="hero-sim wrap" data-sim-root>
+    <div class="sim-stage">
+      <canvas id="sim" role="img" aria-label="Animated simulation; see the caption below"></canvas>
+    </div>
+    <figcaption>
+      <div class="sim-tabs" role="group" aria-label="Choose a simulation">
+        <button type="button" data-mode="vortices" aria-pressed="true"><span class="swatch swatch-qf" aria-hidden="true"></span>Point vortices</button>
+        <button type="button" data-mode="forest" aria-pressed="false"><span class="swatch swatch-bio" aria-hidden="true"></span>Tree disease</button>
+        <button type="button" data-mode="diffusion" aria-pressed="false"><span class="swatch swatch-dm" aria-hidden="true"></span>Diffusion model</button>
+      </div>
+      <p class="sim-caption" data-for="vortices">
+        Point vortices of both signs in a disc, each mirrored by an image vortex beyond the wall.
+        Raise the mutual friction and dipoles shrink and annihilate while lone vortices drift out.
+        Click inside the disc to add a vortex.
+        <span class="sim-refs"><a href="{{ "research/quantum-fluids/" | relURL }}">Quantum fluids research</a>, <a href="https://doi.org/10.1103/PhysRevA.97.033601">related paper</a></span>
+      </p>
+      <p class="sim-caption" data-for="forest" hidden>
+        A stochastic SIR model of a planted forest: each tree is susceptible, infected or removed, and infection
+        jumps a short distance to its neighbours. Above a critical planting density a local outbreak becomes an epidemic.
+        Click a tree to infect it.
+        <span class="sim-refs"><a href="{{ "research/math-biology/" | relURL }}">Maths biology research</a>, <a href="https://arxiv.org/abs/1802.07562">related paper</a></span>
+      </p>
+      <p class="sim-caption" data-for="diffusion" hidden>
+        Learning where a disease spreads easily from sparse data. An outbreak moves through a landscape whose
+        transmission varies in space, but all we observe is a survey of which sites are infected. A generative
+        diffusion model starts from pure noise and removes it step by step, ending with a map of transmission
+        consistent with the survey. Each sample differs most where the outbreak has not reached, which is where the
+        data say least. Here a simple stand-in plays the part of the trained neural network.
+        <span class="sim-refs"><a href="{{ "research/math-biology/" | relURL }}">Maths biology research</a></span>
+      </p>
+      <div class="sim-controls">
+        <label data-for="vortices">Mutual friction <i>α</i>
+          <input type="range" id="alpha" min="0" max="0.1" step="0.005" value="0">
+          <output for="alpha" id="alpha-out">0.000</output></label>
+        <label data-for="forest" hidden>Planting density
+          <input type="range" id="density" min="0.3" max="0.95" step="0.01" value="0.7">
+          <output for="density" id="density-out">70%</output></label>
+        <button type="button" id="sim-sample" data-for="diffusion" hidden>New sample</button>
+        <span class="sim-status" id="sim-status" aria-live="polite"></span>
+        <button type="button" id="sim-restart">Restart</button>
+        <button type="button" id="sim-pause" aria-pressed="false">Pause</button>
+      </div>
+    </figcaption>
+  </figure>
+</section>

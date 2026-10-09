@@ -1,0 +1,13 @@
+<h2>Research group</h2>
+<h3>Current</h3>
+<ul class="group">
+{{ range hugo.Data.group.current }}<li><strong>{{ .name }}</strong> <span class="muted">({{ .role }})</span><br>{{ .topic }}</li>{{ end }}
+</ul>
+<h3>Former postdoctoral researchers</h3>
+<table class="cv-table"><tbody>
+{{ range hugo.Data.group.past_postdocs }}<tr><td>{{ index . 2 }}</td><td><strong>{{ index . 0 }}</strong>, {{ index . 1 }}</td></tr>{{ end }}
+</tbody></table>
+<h3>Former research students</h3>
+<table class="cv-table"><tbody>
+{{ range hugo.Data.group.past_students }}<tr><td>{{ index . 2 }}</td><td><strong>{{ index . 0 }}</strong>, {{ index . 1 }}</td></tr>{{ end }}
+</tbody></table>

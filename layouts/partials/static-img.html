@@ -1,0 +1,8 @@
+{{- /* Renders an <img> for a file under static/, or warns and renders nothing if the file is missing.
+       Call with (dict "src" "img/..." "alt" "..." "class" "..." "attrs" "..."). */ -}}
+{{- $src := strings.TrimPrefix "/" .src -}}
+{{- if os.FileExists (printf "static/%s" $src) -}}
+<img{{ with .class }} class="{{ . }}"{{ end }} src="{{ $src | relURL }}" alt="{{ .alt }}"{{ with .attrs }} {{ . | safeHTMLAttr }}{{ end }} loading="lazy">
+{{- else -}}
+{{- warnf "Missing image: put it at static/%s (run scripts/fetch-assets.sh)" $src -}}
+{{- end -}}

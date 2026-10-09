@@ -1,0 +1,26 @@
+{{- $p := . -}}
+{{- $pdf := "" -}}
+{{- with $p.pdf }}{{ if os.FileExists (printf "static/papers/%s" .) }}{{ $pdf = . }}{{ else }}{{ warnf "Missing PDF: put it at static/papers/%s (run scripts/fetch-assets.sh)" . }}{{ end }}{{ end -}}
+{{- $href := "" -}}
+{{- with $p.doi }}{{ $href = printf "https://doi.org/%s" . }}{{ else }}{{ with $p.url }}{{ $href = . }}{{ else }}{{ with $pdf }}{{ $href = printf "papers/%s" . | relURL }}{{ else }}{{ with $p.arxiv }}{{ $href = printf "https://arxiv.org/abs/%s" . }}{{ end }}{{ end }}{{ end }}{{ end -}}
+<li class="pub"{{ with $p.theme }} data-theme="{{ . }}"{{ end }}>
+  <p class="pub-cite">
+    {{ partial "authors.html" $p.authors }}{{ if ne (index $p.authors (sub (len $p.authors) 1)) "others" }}.{{ end }}
+    {{ if $href }}<a class="pub-title" href="{{ $href }}">{{ $p.title }}</a>{{ else }}<span class="pub-title">{{ $p.title }}</span>{{ end }}.
+    {{- if $p.venue }}
+      {{- with $p.venue }} <cite>{{ . }}</cite>{{ end }}
+      {{- with $p.volume }} <span class="vol">{{ . }}</span>{{ end }}
+      {{- with $p.pages }}, {{ . }}{{ end }}
+      ({{ $p.year }}){{ with $p.status }}, <span class="status">{{ . }}</span>{{ end }}.
+    {{- else }}
+      {{ with $p.status }}<span class="status">{{ . | strings.FirstUpper }}</span>{{ end }} ({{ $p.year }}).
+    {{- end }}
+  </p>
+  <div class="pub-links">
+    {{- with $pdf }}<a href="{{ printf "papers/%s" . | relURL }}">PDF</a>{{ end }}
+    {{- with $p.arxiv }}<a href="https://arxiv.org/abs/{{ . }}">arXiv</a>{{ end }}
+    {{- with $p.doi }}<a href="https://doi.org/{{ . }}">DOI</a>{{ end }}
+    {{- with $p.url }}<a href="{{ . }}">{{ $p.url_label | default "link" }}</a>{{ end }}
+    <details class="bib"><summary>BibTeX</summary><pre><code>{{ partial "bibtex.html" $p }}</code></pre><button class="copy-bib" type="button">Copy</button></details>
+  </div>
+</li>
