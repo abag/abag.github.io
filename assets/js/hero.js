@@ -33,7 +33,7 @@
   const TAU = Math.PI * 2;
 
   let W = 0, H = 0, dpr = 1;
-  let mode = ["vortices", "forest", "diffusion", "gyro", "kelvin"][Math.floor(Math.random() * 5)];
+  let mode = ["vortices", "forest", "diffusion", "gyro", "kelvin", "bec"][Math.floor(Math.random() * 6)];
   let paused = reduceMotion, visible = true, last = 0, raf = 0;
 
   /* ------------------------------------------------------------------ vortices */
@@ -1038,7 +1038,278 @@
     },
   };
 
-  const sims = { vortices: Vort, forest: Forest, diffusion: Diff, gyro: Gyro, kelvin: Kelvin };
+  /* ------------------------------------------------------------------ dipolar condensate */
+  /*
+   * Quasi-2D dipolar Bose–Einstein condensate, dipoles polarised perpendicular to the plane, in a harmonic trap
+   * (ħ = m = ω = 1), evolved with the extended Gross–Pitaevskii equation
+   *   i ψ_t = [ −½∇² + ½r² + V_laser + g|ψ|² + Φ_dd + γ(1 + 3ε_dd²/2)|ψ|³ ] ψ,
+   * where Φ_dd = F⁻¹[ g ε_dd (2 − 3 F(k l_z/√2)) F[|ψ|²] ], F(q) = √π q e^{q²} erfc(q) (quasi-2D kernel for a Gaussian
+   * axial profile of width l_z), and the |ψ|³ term is the Lee–Huang–Yang quantum-fluctuation correction. Split-step
+   * Fourier on 128², Strang splitting (dt = 0.008; imaginary-time cooling uses 0.004, which is stable where 0.008 collapses),
+   * with phenomenological damping (ψ_t multiplied through by 1 − iΓ) and a gentle
+   * spectral filter on the highest wavenumbers to keep the attractive large-k dipolar interaction numerically stable.
+   * Parameters were chosen so the ground state is superfluid for small ε_dd, develops roton density modulation near
+   * ε_dd ≈ 1.7–2.1 and breaks into a droplet crystal near ε_dd ≈ 2.4 (prototype runs). The stirring beam is a repulsive
+   * Gaussian (a blue-detuned laser) of width equal to the healing length of the non-dipolar condensate.
+   */
+  function erfcx(x) {  // e^{x²} erfc(x) for x ≥ 0
+    if (x < 2) {
+      const t = 1 / (1 + 0.3275911 * x);
+      return t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
+    }
+    let f = x; for (let n = 40; n >= 1; n--) f = x + (n / 2) / f;
+    return 1 / (Math.sqrt(Math.PI) * f);
+  }
+  const BEC = {
+    N: 128, L: 17, g: 1, lz: 1.5, gam: 0.02, norm: 475, damp: 0.01, dt: 0.008, dtImag: 0.004, filter: 0.5,
+    eps: 0.5, V0: 60, sig: 0.22, vcap: 4, stepsPerFrame: 2, zoom: 0.78,
+    ready: false, cooling: 0, laser: { on: 0, x: 0, y: 0, tx: 0, ty: 0, active: false },
+    view: null, nScale: 12, nDisp: 10, dispT: 0,
+
+    init() {
+      const N = this.N, NN = N * N, L = this.L, dx = L / N;
+      this.dx = dx; this.NN = NN;
+      const lev = Math.log2(N) | 0; this.rev = new Uint32Array(N);
+      for (let i = 0; i < N; i++) { let r = 0; for (let b = 0; b < lev; b++) r |= ((i >> b) & 1) << (lev - 1 - b); this.rev[i] = r; }
+      this.cT = new Float64Array(N / 2); this.sT = new Float64Array(N / 2);
+      for (let i = 0; i < N / 2; i++) { this.cT[i] = Math.cos(TAU * i / N); this.sT[i] = Math.sin(TAU * i / N); }
+      const A = () => new Float64Array(NN);
+      this.re = A(); this.im = A(); this.nr = A(); this.ni = A(); this.Phi = A(); this.Lz = A(); this.tr = A();
+      this.X = A(); this.Y = A(); this.V = A(); this.K2 = A(); this.F = A(); this.U = A();
+      const kmax = Math.PI / dx;
+      this.filt = A();
+      for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+        const p = j * N + i, x = (i - N / 2) * dx, y = (j - N / 2) * dx;
+        this.X[p] = x; this.Y[p] = y; this.V[p] = 0.5 * (x * x + y * y);
+        const kx = TAU / L * (i < N / 2 ? i : i - N), ky = TAU / L * (j < N / 2 ? j : j - N), k = Math.hypot(kx, ky);
+        this.K2[p] = k * k;
+        const q = k * this.lz / Math.SQRT2; this.F[p] = Math.sqrt(Math.PI) * q * erfcx(q);
+        this.filt[p] = Math.exp(-this.filter * Math.pow(k / kmax, 12));
+      }
+      this.kc = A(); this.ks = A(); this.kicKey = "";
+      this.off = document.createElement("canvas"); this.off.width = this.off.height = N;
+      this.offCtx = this.off.getContext("2d"); this.img = this.offCtx.createImageData(N, N);
+      this.ready = true;
+      this.setEps(this.eps);
+      this.reset();
+    },
+    setEps(e) {
+      this.eps = e;
+      if (!this.ready) return;
+      for (let p = 0; p < this.NN; p++) this.U[p] = this.g * e * (2 - 3 * this.F[p]);
+    },
+    fft1(re, im, off, inv) {
+      const n = this.N, rev = this.rev;
+      for (let i = 0; i < n; i++) { const j = rev[i]; if (j > i) { const a = off + i, b = off + j; let t = re[a]; re[a] = re[b]; re[b] = t; t = im[a]; im[a] = im[b]; im[b] = t; } }
+      for (let size = 2; size <= n; size *= 2) {
+        const half = size / 2, step = n / size;
+        for (let i = 0; i < n; i += size) for (let j = 0, k = 0; j < half; j++, k += step) {
+          const a = off + i + j, b = a + half, c = this.cT[k], s = inv ? this.sT[k] : -this.sT[k];
+          const tr = re[b] * c - im[b] * s, ti = re[b] * s + im[b] * c;
+          re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti;
+        }
+      }
+    },
+    transpose(a) {
+      const n = this.N, t = this.tr;
+      for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) t[c * n + r] = a[r * n + c];
+      a.set(t);
+    },
+    fft2(re, im, inv) {
+      const n = this.N;
+      for (let r = 0; r < n; r++) this.fft1(re, im, r * n, inv);
+      this.transpose(re); this.transpose(im);
+      for (let r = 0; r < n; r++) this.fft1(re, im, r * n, inv);
+      this.transpose(re); this.transpose(im);
+      if (inv) { const f = 1 / (n * n); for (let i = 0; i < n * n; i++) { re[i] *= f; im[i] *= f; } }
+    },
+    dipolar() {
+      const { re, im, nr, ni, U, NN } = this;
+      for (let p = 0; p < NN; p++) { nr[p] = re[p] * re[p] + im[p] * im[p]; ni[p] = 0; }
+      this.fft2(nr, ni, false);
+      for (let p = 0; p < NN; p++) { nr[p] *= U[p]; ni[p] *= U[p]; }
+      this.fft2(nr, ni, true);
+      this.Phi.set(nr);
+    },
+    normalise() {
+      const { re, im, NN } = this;
+      let s = 0; for (let p = 0; p < NN; p++) s += re[p] * re[p] + im[p] * im[p];
+      const f = Math.sqrt(this.norm / (s * this.dx * this.dx));
+      for (let p = 0; p < NN; p++) { re[p] *= f; im[p] *= f; }
+    },
+    chemical() {
+      const { re, im, NN, V, Phi } = this, lhy = this.gam * (1 + 1.5 * this.eps * this.eps);
+      let s = 0, w = 0;
+      for (let p = 0; p < NN; p++) { const n = re[p] * re[p] + im[p] * im[p]; s += n * (V[p] + this.g * n + Phi[p] + lhy * n * Math.sqrt(n)); w += n; }
+      return s / w;
+    },
+    kinetic(imag) {
+      const ar = imag ? 0 : 1, ai = imag ? 1 : this.damp, dt = imag ? this.dtImag : this.dt, key = ar + "," + ai + "," + dt;
+      if (this.kicKey === key) return;
+      for (let p = 0; p < this.NN; p++) {
+        const T = 0.5 * this.K2[p], mag = Math.exp(-ai * T * dt) * this.filt[p];
+        this.kc[p] = mag * Math.cos(-ar * T * dt); this.ks[p] = mag * Math.sin(-ar * T * dt);
+      }
+      this.kicKey = key;
+    },
+    laserField() {
+      const Lz = this.Lz, l = this.laser, N = this.N, dx = this.dx;
+      Lz.fill(0);
+      if (l.on <= 0) return;
+      const R = 4 * this.sig, i0 = Math.max(0, Math.floor((l.x - R) / dx + N / 2)), i1 = Math.min(N - 1, Math.ceil((l.x + R) / dx + N / 2));
+      const j0 = Math.max(0, Math.floor((l.y - R) / dx + N / 2)), j1 = Math.min(N - 1, Math.ceil((l.y + R) / dx + N / 2));
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const p = j * N + i, a = this.X[p] - l.x, b = this.Y[p] - l.y;
+        Lz[p] = l.on * this.V0 * Math.exp(-(a * a + b * b) / (2 * this.sig * this.sig));
+      }
+    },
+    halfPot(imag, mu) {
+      const { re, im, NN, V, Phi, Lz } = this, dt = imag ? this.dtImag : this.dt, g = this.g, lhy = this.gam * (1 + 1.5 * this.eps * this.eps);
+      const ar = imag ? 0 : 1, ai = imag ? 1 : this.damp;
+      for (let p = 0; p < NN; p++) {
+        const n = re[p] * re[p] + im[p] * im[p];
+        const W = V[p] + g * n + Phi[p] + lhy * n * Math.sqrt(n) - mu + Lz[p];
+        const ph = -ar * W * dt / 2, mag = Math.exp(-ai * W * dt / 2), c = mag * Math.cos(ph), s = mag * Math.sin(ph);
+        const r = re[p], i = im[p]; re[p] = r * c - i * s; im[p] = r * s + i * c;
+      }
+    },
+    stepOnce(imag) {
+      const { re, im, NN, kc, ks } = this;
+      this.kinetic(imag); this.laserField(); this.dipolar();
+      const mu = imag ? 0 : (this.muCount++ % 10 === 0 ? (this.mu = this.chemical()) : this.mu);
+      this.halfPot(imag, mu);
+      this.fft2(re, im, false);
+      for (let p = 0; p < NN; p++) { const r = re[p], i = im[p], c = kc[p], s = ks[p]; re[p] = r * c - i * s; im[p] = r * s + i * c; }
+      this.fft2(re, im, true);
+      this.halfPot(imag, mu);
+      this.normalise();
+    },
+    reset() {  // Thomas–Fermi guess, then cool to the ground state over the next frames (imaginary time)
+      if (!this.ready) return;
+      const geff = this.g * (1 + 2 * this.eps), mu = Math.sqrt(geff * this.norm / Math.PI);
+      for (let p = 0; p < this.NN; p++) {
+        this.re[p] = Math.sqrt(Math.max(0, mu - this.V[p]) / geff) * (1 + 0.05 * (Math.random() - 0.5)); this.im[p] = 0;
+      }
+      this.normalise(); this.mu = 0; this.muCount = 0; this.cooling = 500;
+      this.laser.on = 0; this.laser.active = false;
+    },
+    moveLaser(h) {
+      const l = this.laser;
+      l.on = l.active ? Math.min(1, l.on + h / 0.2) : Math.max(0, l.on - h / 0.2);
+      const dx = l.tx - l.x, dy = l.ty - l.y, d = Math.hypot(dx, dy), m = this.vcap * h;
+      if (d > m) { l.x += dx / d * m; l.y += dy / d * m; } else { l.x = l.tx; l.y = l.ty; }
+    },
+    advance(n) { for (let s = 0; s < n; s++) this.stepOnce(true); this.cooling = 0; },
+    step(dt) {
+      if (!this.ready) this.init();
+      const t0 = performance.now();
+      if (this.cooling > 0) {
+        for (let s = 0; s < 4 && this.cooling > 0; s++, this.cooling--) this.stepOnce(true);
+      } else {
+        for (let s = 0; s < this.stepsPerFrame; s++) { this.moveLaser(this.dt); this.stepOnce(false); }
+        const ms = performance.now() - t0;
+        if (ms > 16 && this.stepsPerFrame > 1) this.stepsPerFrame--; else if (ms < 8 && this.stepsPerFrame < 4) this.stepsPerFrame++;
+      }
+      let bad = !isFinite(this.re[this.NN / 2 + this.N / 2]);
+      if (bad) this.reset();
+      if ((this.dispT += dt) > 0.5) { this.dispT = 0; this.measure(); }
+    },
+    measure() {  // density-weighted mean density, for the colour scale and the Bogoliubov inset
+      const { re, im, NN } = this;
+      let s1 = 0, s2 = 0, mx = 0;
+      for (let p = 0; p < NN; p++) { const n = re[p] * re[p] + im[p] * im[p]; s1 += n; s2 += n * n; if (n > mx) mx = n; }
+      this.nDisp = s2 / s1;
+      if (mx > 300) { this.reset(); return; }  // collapse: start again from the ground state
+      this.nScale += 0.3 * (Math.min(mx, 4 * this.nDisp) - this.nScale);
+    },
+    layout() {
+      const wide = W / H > 1.3;
+      const size = wide ? Math.min(H - 8, W * 0.62) : Math.min(W, H * 0.62);
+      const chart = wide ? { w: Math.min(260, W - size - 60), h: 180 } : { w: Math.min(W - 24, 320), h: Math.max(110, H - size - 22) };
+      const px = wide ? Math.max(4, (W - size - chart.w - 40) / 2) : (W - size) / 2;
+      chart.x = wide ? px + size + 40 : (W - chart.w) / 2;
+      chart.y = wide ? (H - chart.h) / 2 : Math.min(size + 14, H - chart.h - 2);
+      this.view = { px, py: 4, size, chart };
+    },
+    draw() {
+      if (!this.ready) this.init();
+      ctx.clearRect(0, 0, W, H);
+      const { re, im, NN, img } = this, d = img.data, sc = 1 / (0.9 * this.nScale);
+      const ramp = [[255, 255, 255], [209, 229, 240], [146, 197, 222], [67, 147, 195], [33, 102, 172], [5, 48, 97]];
+      for (let p = 0; p < NN; p++) {
+        const v = Math.min(1, (re[p] * re[p] + im[p] * im[p]) * sc) * (ramp.length - 1), i = Math.min(ramp.length - 2, Math.floor(v)), f = v - i;
+        const a = ramp[i], b = ramp[i + 1];
+        d[4 * p] = a[0] + f * (b[0] - a[0]); d[4 * p + 1] = a[1] + f * (b[1] - a[1]); d[4 * p + 2] = a[2] + f * (b[2] - a[2]); d[4 * p + 3] = 255;
+      }
+      this.offCtx.putImageData(img, 0, 0);
+      const v = this.view;
+      ctx.save(); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+      const cut = this.N * (1 - this.zoom) / 2;
+      ctx.drawImage(this.off, cut, cut, this.N - 2 * cut, this.N - 2 * cut, v.px, v.py, v.size, v.size); ctx.restore();
+      // the stirring beam
+      const l = this.laser;
+      if (l.on > 0.02) {
+        const half = this.zoom * this.L / 2, s = v.size / (2 * half), cx = v.px + (l.x + half) * s, cy = v.py + (l.y + half) * s;
+        ctx.globalAlpha = l.on; ctx.strokeStyle = col.neg; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(cx, cy, 2 * this.sig * s, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      ctx.fillStyle = col.muted; ctx.font = "italic 12px Newsreader, Georgia, serif"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.fillText(this.cooling > 0 ? "cooling to the ground state…" : "press and drag to stir", v.px + 6, v.py + v.size - 8);
+      this.drawDispersion(v.chart);
+    },
+    omega2(k, n) {
+      const q = k * this.lz / Math.SQRT2, F = Math.sqrt(Math.PI) * q * erfcx(q), U = this.g * (1 + this.eps * (2 - 3 * F));
+      const e = 0.5 * k * k, lhy = 3 * this.gam * (1 + 1.5 * this.eps * this.eps) * Math.pow(n, 1.5);
+      return e * (e + 2 * n * U + lhy);
+    },
+    drawDispersion(c) {
+      const { x, y, w, h } = c, top = y + 30, bot = y + h - 30, kmax = 5, n = this.nDisp, M = 100;
+      const ks = [], om = []; let unstable = false, lo = null, hi = null, wmax = 0;
+      for (let i = 0; i <= M; i++) {
+        const k = (i / M) * kmax, o2 = this.omega2(k, n);
+        if (o2 < 0 && k > 0.05) { unstable = true; lo = lo ?? k; hi = k; }
+        ks.push(k); om.push(Math.sqrt(Math.max(0, o2))); wmax = Math.max(wmax, om[i]);
+      }
+      let roton = -1;  // interior local minimum of ω(k)
+      for (let i = 5; i < M; i++) if (om[i] < om[i - 1] && om[i] <= om[i + 1]) { roton = i; break; }
+      wmax *= 1.08;
+      const X = (k) => x + 6 + (k / kmax) * (w - 12), Y = (o) => bot - (o / wmax) * (bot - top);
+      ctx.fillStyle = col.ink; ctx.font = "13px Newsreader, Georgia, serif"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.fillText("Excitation spectrum ω(k)", x, y + 12);
+      ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x + 6, bot + 0.5); ctx.lineTo(x + w - 6, bot + 0.5); ctx.stroke();
+      if (unstable) { ctx.fillStyle = "rgba(178,24,43,0.12)"; ctx.fillRect(X(lo), top, X(hi) - X(lo), bot - top); }
+      ctx.strokeStyle = col.pos; ctx.lineWidth = 1.8; ctx.beginPath();
+      ks.forEach((k, i) => (i ? ctx.lineTo(X(k), Y(om[i])) : ctx.moveTo(X(k), Y(om[i])))); ctx.stroke();
+      if (roton > 0) { ctx.fillStyle = col.neg; ctx.beginPath(); ctx.arc(X(ks[roton]), Y(om[roton]), 3.5, 0, TAU); ctx.fill(); }
+      ctx.fillStyle = col.muted; ctx.font = "italic 12px Newsreader, Georgia, serif"; ctx.textAlign = "center";
+      for (const k of [0, 1, 2, 3, 4, 5]) ctx.fillText(String(k), X(k), bot + 13);
+      ctx.fillText("wavenumber k", x + w / 2, bot + 26);
+      ctx.textAlign = "left";
+      ctx.fillStyle = unstable || roton > 0 ? col.neg : col.muted;
+      ctx.fillText(unstable ? "roton instability" : roton > 0 ? "roton minimum" : "phonons, then free particles", x, y + 26);
+    },
+    press(px, py) {
+      if (!this.ready || this.cooling > 0) return;
+      const v = this.view, half = this.zoom * this.L / 2, s = 2 * half / v.size, x = (px - v.px) * s - half, y = (py - v.py) * s - half;
+      if (Math.abs(x) > half || Math.abs(y) > half) return;
+      const l = this.laser; l.active = true; l.tx = x; l.ty = y;
+      if (l.on < 0.05) { l.x = x; l.y = y; }
+    },
+    move(px, py) {
+      const l = this.laser; if (!l.active) return;
+      const v = this.view, half = this.zoom * this.L / 2, s = 2 * half / v.size;
+      l.tx = Math.max(-half, Math.min(half, (px - v.px) * s - half));
+      l.ty = Math.max(-half, Math.min(half, (py - v.py) * s - half));
+    },
+    release() { this.laser.active = false; },
+    click() {},
+    status() {
+      if (!this.ready || this.cooling > 0) return "Finding the ground state";
+      return `ε_dd = ${this.eps.toFixed(2)}${this.laser.on > 0.05 ? ", stirring" : ""}`;
+    },
+  };
+
+  const sims = { vortices: Vort, forest: Forest, diffusion: Diff, gyro: Gyro, kelvin: Kelvin, bec: BEC };
 
   /* ------------------------------------------------------------------ plumbing */
   function resize() {
@@ -1047,7 +1318,7 @@
     W = Math.max(1, r.width); H = Math.max(1, r.height);
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    Vort.layout(); Forest.layout(); Diff.layout(); Gyro.layout(); Kelvin.layout();
+    Vort.layout(); Forest.layout(); Diff.layout(); Gyro.layout(); Kelvin.layout(); BEC.layout();
     render();
   }
   let lastStatus = "";
@@ -1067,12 +1338,14 @@
   function setMode(m) {
     mode = m; last = 0; root.dataset.mode = m;
     if (m === "kelvin" && !Kelvin.ready) { Kelvin.init(); if (paused) Kelvin.advance(400); }
+    if (m === "bec" && !BEC.ready) { BEC.init(); if (paused) BEC.advance(500); }
     root.querySelectorAll(".sim-tabs button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
     root.querySelectorAll("[data-for]").forEach((el) => { el.hidden = el.dataset.for !== m; });
     canvas.setAttribute("aria-label", {
       vortices: "Animation of point vortices moving inside a circular container",
       forest: "Animation of a disease spreading through a planted forest, with a graph of susceptible, infected and removed trees",
       diffusion: "Animation in three panels: an outbreak and a sparse survey of it; a diffusion model turning noise into a map of transmission; and the true transmission map",
+      bec: "Density of a two-dimensional dipolar Bose–Einstein condensate in a harmonic trap, which can be stirred with a laser beam, with a graph of its excitation spectrum",
       kelvin: "A single vortex line rippling with helical Kelvin waves, with a graph of its energy spectrum against wavenumber",
       gyro: "Rotating three-dimensional view of swimming cells in a periodic flow, gathering into vertical plumes, with a small graph of the Lyapunov exponent against swimming speed",
     }[m]);
@@ -1100,16 +1373,20 @@
     const r = canvas.getBoundingClientRect();
     sims[mode].click(e.clientX - r.left, e.clientY - r.top);
     if (sims[mode].drag) { dragX = e.clientX; sims[mode].dragging = true; canvas.setPointerCapture(e.pointerId); }
+    if (sims[mode].press) { sims[mode].press(e.clientX - r.left, e.clientY - r.top); canvas.setPointerCapture(e.pointerId); }
     render();
   });
   canvas.addEventListener("pointermove", (e) => {
+    if (sims[mode].move) { const r = canvas.getBoundingClientRect(); sims[mode].move(e.clientX - r.left, e.clientY - r.top); return; }
     if (dragX === null || !sims[mode].drag) return;
     sims[mode].drag(e.clientX - dragX); dragX = e.clientX; render();
   });
-  const endDrag = () => { dragX = null; Gyro.dragging = false; Kelvin.dragging = false; };
+  const endDrag = () => { dragX = null; Gyro.dragging = false; Kelvin.dragging = false; BEC.release(); };
   canvas.addEventListener("pointerup", endDrag);
   canvas.addEventListener("pointercancel", endDrag);
   const phiIn = root.querySelector("#phi"), phiOut = root.querySelector("#phi-out");
+  const eddIn = root.querySelector("#edd"), eddOut = root.querySelector("#edd-out");
+  eddIn.addEventListener("input", () => { eddOut.textContent = (+eddIn.value).toFixed(2); BEC.setEps(+eddIn.value); render(); });
   const forceIn = root.querySelector("#kforce"), forceOut = root.querySelector("#kforce-out");
   forceIn.addEventListener("input", () => { Kelvin.forcing = +forceIn.value; forceOut.textContent = Kelvin.forcing ? Kelvin.forcing.toFixed(2) : "off"; render(); });
   root.querySelector("#kpluck").addEventListener("click", () => { Kelvin.pluck(); render(); });

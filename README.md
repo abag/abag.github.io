@@ -111,6 +111,18 @@ File names are case-sensitive on GitHub (`Tree_snap.png` is not `tree_snap.png`)
   k^{−7/5} guides; the status line shows the fitted slope over k = 4–12, typically about −2.1, steeper than both
   predictions, because the inertial range at this resolution is too short to discriminate them.
 
+- **Dipolar BEC.** Quasi-2D dipolar condensate (dipoles perpendicular to the plane) in a harmonic trap, ħ = m = ω = 1,
+  evolved with the extended GPE: contact interaction g = 1; dipolar potential from the quasi-2D kernel
+  Ũ(k) = g ε_dd [2 − 3F(k l_z/√2)], F(q) = √π q e^{q²} erfc(q), axial width l_z = 1.5; Lee–Huang–Yang term
+  γ(1 + 3ε_dd²/2)|ψ|³ with γ = 0.02; norm 475. Split-step Fourier on 128² in a box of side 17, dt = 0.008 (cooling to
+  the ground state in imaginary time uses 0.004), damping Γ = 0.01 and a spectral filter on the top wavenumbers that
+  keeps the attractive large-k dipolar interaction numerically stable. With these values the ground state is superfluid
+  for small ε_dd, develops a roton and ring-shaped density modulation by ε_dd ≈ 1.9, and forms droplets near 2.4.
+  Pressing on the condensate switches on a repulsive Gaussian beam (height 60, width 0.22, about one healing length of
+  the non-dipolar cloud) that follows the pointer at up to 4 trap units per unit time; releasing switches it off.
+  The inset is the homogeneous Bogoliubov spectrum at the density-weighted mean density of the cloud, including the
+  LHY term; a red dot marks a roton minimum and red shading an instability. The display shows the central 78% of the box.
+
 Parameters are at the top of each object in the file. Animations pause when off-screen, and start paused for
 visitors who have asked their system to reduce motion.
 
