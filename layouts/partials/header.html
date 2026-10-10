@@ -1,6 +1,9 @@
 <header class="site-header">
   <div class="wrap header-inner">
-    <a class="site-name" href="{{ "" | relURL }}">{{ site.Title }}</a>
+    <div class="brand">
+      <a class="site-name" href="{{ "" | relURL }}">{{ site.Title }}</a>
+      <a class="mars-logo" href="https://www.lancaster.ac.uk/mathematics-for-ai-in-real-world-systems/" title="MARS: Mathematics for AI in Real-world Systems, Lancaster University"><img src="{{ "img/mars-logo.png" | relURL }}" alt="MARS: Mathematics for AI in Real-world Systems" width="74" height="40"></a>
+    </div>
     <nav aria-label="Main">
       <ul>
       {{- $cur := . }}

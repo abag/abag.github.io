@@ -7,8 +7,8 @@
   --muted: #6b7783;
   --rule: #dde2e7;
   --wash: #f4f6f8;
-  --link: #2166ac;
-  --link-hover: #144a7c;
+  --link: #b5121b;        /* Lancaster red */
+  --link-hover: #7f0c13;
   --qf: #2166ac;      /* anticlockwise vortex */
   --qf-neg: #b2182b;  /* clockwise vortex */
   --bio-s: #4d9a55;   /* susceptible */
@@ -59,12 +59,16 @@ p { margin: 0 0 1em; }
 
 /* Header */
 .site-header { border-bottom: 1px solid var(--rule); }
-.header-inner { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.5rem 2rem; padding-block: 1.1rem; }
+.header-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 2rem; padding-block: 0.9rem; }
+.brand { display: flex; align-items: center; gap: 0.9rem; }
 .site-name { font-size: var(--step-1); color: var(--ink); text-decoration: none; font-weight: 500; }
+.mars-logo { display: block; line-height: 0; border-radius: 3px; }
+.mars-logo img { height: 40px; width: auto; border-radius: 3px; transition: opacity 0.15s; }
+.mars-logo:hover img { opacity: 0.85; }
 .site-header nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.25rem 1.5rem; }
 .site-header nav a { color: var(--ink-soft); text-decoration: none; padding-block: 0.25rem; }
 .site-header nav a:hover { color: var(--link); }
-.site-header nav a[aria-current="page"] { color: var(--ink); box-shadow: inset 0 -2px 0 var(--ink); }
+.site-header nav a[aria-current="page"] { color: var(--ink); box-shadow: inset 0 -2px 0 var(--link); }
 
 /* Hero */
 .hero { padding-top: clamp(2rem, 5vw, 3.5rem); }
@@ -90,7 +94,9 @@ button { font: inherit; color: inherit; }
 .swatch-gyro { background: radial-gradient(circle at 50% 35%, var(--bio-s) 0 38%, color-mix(in srgb, var(--bio-s) 35%, white) 40%); border: 1px solid var(--bio-s); }
 .swatch-kw { background: linear-gradient(90deg, #92c5de, #2166ac, #053061); }
 .swatch-bio { background: conic-gradient(var(--bio-s) 0 40%, var(--bio-i) 40% 70%, var(--bio-r) 70%); }
-.sim-caption { max-width: var(--measure); color: var(--ink-soft); font-size: 1.0625rem; margin: 0.75rem 0 0.5rem; }
+/* the caption takes its width from the row of buttons above it */
+.sim-intro { width: fit-content; max-width: 100%; }
+.sim-caption { width: 0; min-width: 100%; color: var(--ink-soft); font-size: 1.0625rem; margin: 0.75rem 0 0.5rem; }
 .sim-refs { display: block; margin-top: 0.25rem; }
 .sim-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; font-size: var(--step--1); color: var(--ink-soft); }
 .sim-controls label { display: inline-flex; align-items: center; gap: 0.5rem; }
@@ -198,8 +204,10 @@ table { border-collapse: collapse; width: 100%; }
   .news li { grid-template-columns: 1fr; gap: 0.1rem; }
   .sim-stage { aspect-ratio: 1 / 1.05; max-height: 70vh; }
   [data-sim-root][data-mode="diffusion"] .sim-stage { aspect-ratio: 1 / 1.3; max-height: 82vh; }
-  .site-header nav ul { gap: 0.25rem 1rem; }
-  .site-header nav a { font-size: 1.0625rem; }
+  .mars-logo img { height: 34px; }
+  .site-header nav { width: 100%; }
+  .site-header nav ul { gap: 0.25rem 0.6rem; justify-content: space-between; }
+  .site-header nav a { font-size: 1rem; }
   .page td:first-child { width: 6rem; white-space: normal; }
 }
 @media (prefers-reduced-motion: reduce) {
