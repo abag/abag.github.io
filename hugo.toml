@@ -40,6 +40,6 @@ disableKinds = ["taxonomy", "term", "RSS"]
     pageRef = "/teaching"
     weight = 4
   [[menus.main]]
-    name = "CV"
-    pageRef = "/cv"
+    name = "Bio"
+    pageRef = "/bio"
     weight = 5

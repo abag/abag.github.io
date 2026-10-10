@@ -39,7 +39,7 @@ http://localhost:1313. Pages reload as you edit.
 | Research group | `data/group.yaml` |
 | About text | `content/_index.md` |
 | Research pages | `content/research/*.md` |
-| Teaching, CV | `content/teaching/_index.md`, `content/cv/_index.md`; replace `static/files/CV.pdf` for a new CV |
+| Teaching, Bio | `content/teaching/_index.md`, `content/bio/_index.md`; replace `static/files/CV.pdf` for a new CV |
 | Email, phone, address, ORCID, Google Scholar, GitHub | `hugo.toml`, under `[params]` |
 | "Last updated" in the footer | `updated` in `hugo.toml` |
 
@@ -62,7 +62,7 @@ The site expects these files. Any that are missing are simply left out of the pa
 | `static/img/math-biology/Sirio_snap.png` | stem cell highlight |
 | `static/img/math-biology/spinflock.png` | flocking highlight |
 | `static/img/math-biology/Neo_snap.png` | Neolithic highlight |
-| `static/files/CV.pdf` | CV page |
+| `static/files/CV.pdf` | Bio page |
 | `static/files/teaching/*.pdf` | course notes on the teaching page |
 | `static/papers/*.pdf` | PDF links on publications (file names as in `data/publications.yaml`) |
 

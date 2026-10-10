@@ -6,7 +6,7 @@
     <h2 id="about">About</h2>
     {{ .Content }}
     <p class="contact-line">{{ partial "email.html" . }}</p>
-    <p class="profile-links"><a href="{{ site.Params.orcid }}">ORCID</a>{{ with site.Params.scholar }}, <a href="{{ . }}">Google Scholar</a>{{ end }}{{ with site.Params.github }}, <a href="{{ . }}">GitHub</a>{{ end }}, <a href="{{ "cv/" | relURL }}">CV</a></p>
+    <p class="profile-links"><a href="{{ site.Params.orcid }}">ORCID</a>{{ with site.Params.scholar }}, <a href="{{ . }}">Google Scholar</a>{{ end }}{{ with site.Params.github }}, <a href="{{ . }}">GitHub</a>{{ end }}, <a href="{{ "bio/" | relURL }}">Bio</a></p>
   </div>
   {{ partial "static-img.html" (dict "src" "img/portrait.jpg" "alt" "Andrew Baggaley with his two dogs on a fell walk" "class" "portrait" "attrs" "width=\"720\" height=\"960\"") }}
 </section>
@@ -41,7 +41,7 @@
     <li><strong>{{ .name }}</strong> <span class="muted">({{ .role }})</span><br>{{ .topic }}</li>
   {{ end }}
   </ul>
-  <p class="group-note">I am happy to supervise PhD projects in quantum fluids and turbulence, in mathematical biology and plant health, and at their interfaces with statistical inference and machine learning. Projects can lean towards large-scale simulation, towards modelling and analysis, or towards inference from data. Please get in touch to discuss ideas. Former students and postdocs are listed on my <a href="{{ "cv/" | relURL }}">CV page</a>.</p>
+  <p class="group-note">I am happy to supervise PhD projects in quantum fluids and turbulence, in mathematical biology and plant health, and at their interfaces with statistical inference and machine learning. Projects can lean towards large-scale simulation, towards modelling and analysis, or towards inference from data. Please get in touch to discuss ideas. Former students and postdocs are listed on my <a href="{{ "bio/" | relURL }}">Bio page</a>.</p>
 </section>
 {{ end }}
 

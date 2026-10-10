@@ -1,7 +1,12 @@
 ---
-title: CV
-description: Employment, education, grants and supervision.
+title: Bio
+description: Short biography, career, grants and research group.
+aliases: ["/cv/"]
 ---
+
+Andrew Baggaley is Professor of Mathematics and AI at Lancaster University, where he is Director of Studies for the MARS degree programme and leads the MARS section of the School of Mathematical Sciences. He studied at Newcastle University, completing an MMath and then a PhD in applied mathematics in 2009, supervised by Anvar Shukurov and Carlo Barenghi. After a postdoctoral position modelling the spread of farming in Neolithic Europe, he was a lecturer at the University of Glasgow from 2012 to 2015 and then at Newcastle University from 2015 to 2025, latterly as Reader in Applied Mathematics.
+
+His research spans turbulence and vortex dynamics in quantum fluids, and mathematical biology, especially the spread of tree and plant disease, linked by large-scale simulation, stochastic modelling and statistical and machine-learning inference. His work has been funded by EPSRC, the Leverhulme Trust, STFC, NERC and Defra.
 
 [Download my full CV (PDF, June 2026)](/files/CV.pdf)
 
