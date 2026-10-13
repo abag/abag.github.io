@@ -133,6 +133,18 @@ File names are case-sensitive on GitHub (`Tree_snap.png` is not `tree_snap.png`)
   in `static/data/neo_geo.json` (28 KB, loaded only when this tab is opened) were built from Natural Earth 1:50m land
   and rivers, which are in the public domain (naturalearthdata.com).
 
+- **Pulsar glitches.** The point-vortex model of Howitt, Melatos & Haskell (MNRAS 2020, arXiv:2008.00365): about 280
+  vortices (κ = 1) in a disc of radius 10, in the frame co-rotating with the crust at Ω_c. Velocities from the other
+  vortices, image vortices (the wall), the rotating frame and Gaussian pinning sites on a square grid (spacing 0.36,
+  width 0.04) are rotated clockwise by the dissipation angle φ = 0.1. The crust spins down at N_ext = −5 × 10⁻³; the
+  angular momentum the superfluid loses, Ω_s = (2/R⁴) Σ(R² − r_i²), is fed back with I_rel = 1, so avalanches spin
+  the crust up (glitches). Vortices that reach the wall leave. The slider sets the maximum pinning speed
+  V₀ ξ e^{−1/2} (0.25 to 3); the RK4 step is chosen so V₀·dt ≤ 0.9. To avoid the paper's long stress build-up, a run
+  starts from a pinned triangular array with the crust already lagging just below the unpinning threshold, and the
+  first 5 time units (settling into the pins) are not counted. A vortex counts as unpinned when its speed exceeds
+  0.3 of the maximum pinning speed; an avalanche is a run with at least 4 unpinned at once. The crust-spin trace has a
+  least-squares straight line removed over the plotted window. Runs restart when fewer than 150 vortices remain.
+
 Parameters are at the top of each object in the file. Animations pause when off-screen, and start paused for
 visitors who have asked their system to reduce motion.
 

@@ -33,7 +33,7 @@
   const TAU = Math.PI * 2;
 
   let W = 0, H = 0, dpr = 1;
-  let mode = ["vortices", "forest", "diffusion", "gyro", "kelvin", "bec", "neo"][Math.floor(Math.random() * 7)];
+  let mode = ["vortices", "forest", "diffusion", "gyro", "kelvin", "bec", "neo", "glitch"][Math.floor(Math.random() * 8)];
   let paused = reduceMotion, visible = true, last = 0, raf = 0;
 
   /* ------------------------------------------------------------------ vortices */
@@ -1516,7 +1516,194 @@
     },
   };
 
-  const sims = { vortices: Vort, forest: Forest, diffusion: Diff, gyro: Gyro, kelvin: Kelvin, bec: BEC, neo: Neo };
+  /* ------------------------------------------------------------------ pulsar glitches */
+  /*
+   * Point-vortex model of pulsar glitches after Howitt, Melatos & Haskell, MNRAS 498, 320 (2020), arXiv:2008.00365.
+   * N vortices (κ = 1) in a disc of radius R, in the frame co-rotating with the container (the crust) at Ω_c:
+   *   v_i = Σ_{j≠i} ẑ×x_ij/r_ij² − Σ_j ẑ×x_ij,img/r²  − Ω_c ẑ×x_i  + V₀ e^{−d²/2ξ²} (d × ẑ),
+   * then rotated clockwise through the dissipation angle φ (mutual friction). Pinning sites form a square grid of
+   * spacing a; only the nearest site matters because ξ ≪ a. The container spins down at rate N_ext; angular momentum
+   * the superfluid loses, Ω_s = (2κ/R⁴) Σ (R² − r_i²), is fed back to it with I_rel = 1, so collective unpinning
+   * (an avalanche) spins the container up: a glitch. Vortices that reach the wall annihilate with their images.
+   * Browser-scale parameters (300 vortices, a = 0.36, ξ = 0.04, φ = 0.1, N_ext = −5×10⁻³) were checked in prototype
+   * runs: strong pinning gives a quiet baseline broken by avalanches of up to ~10 vortices; weak pinning gives creep.
+   * The run starts from a pinned triangular array with the container already lagging just below the unpinning
+   * threshold, so the first avalanche comes quickly rather than after the long stress build-up of the paper.
+   */
+  const Glitch = {
+    N0: 300, R: 10, a: 0.36, xi: 0.04, vmax: 2, phi: 0.1, Irel: 1, Next: -5e-3, rate: 2, settle: 5,
+    n: 0, X: null, Y: null, Oc: 0, Os: 0, t: 0, ready: false, view: null,
+    hist: [], sampleT: 0, events: 0, biggest: 0, inEvent: false, eventPeak: 0, trails: null,
+
+    init() {
+      const N = this.N0;
+      this.X = new Float64Array(N); this.Y = new Float64Array(N);
+      this.k = Array.from({ length: 8 }, () => new Float64Array(N)); this.tX = new Float64Array(N); this.tY = new Float64Array(N);
+      this.spd = new Float64Array(N); this.trails = Array.from({ length: N }, () => []);
+      this.ready = true; this.reset();
+    },
+    reset() {
+      if (!this.X) return;
+      // pinned triangular array: lattice of the right density, snapped to the nearest pinning site
+      const R = this.R, b = Math.sqrt(2 * Math.PI * R * R / (Math.sqrt(3) * this.N0)), pts = [], th = Math.random() * Math.PI;
+      for (let j = -40; j <= 40; j++) for (let i = -40; i <= 40; i++) {
+        let x = (i + 0.5 * (j & 1)) * b, y = j * b * Math.sqrt(3) / 2;
+        const xr = x * Math.cos(th) - y * Math.sin(th), yr = x * Math.sin(th) + y * Math.cos(th);
+        if (xr * xr + yr * yr < (0.97 * R) ** 2) pts.push([xr, yr]);
+      }
+      pts.sort((p, q) => (p[0] ** 2 + p[1] ** 2) - (q[0] ** 2 + q[1] ** 2));
+      this.n = Math.min(this.N0, pts.length);
+      for (let i = 0; i < this.n; i++) { this.X[i] = this.a * Math.round(pts[i][0] / this.a); this.Y[i] = this.a * Math.round(pts[i][1] / this.a); this.trails[i] = []; }
+      this.Os = this.omegaS();
+      // container already lagging: outer vortices at about 85% of the unpinning threshold
+      this.Oc = this.Os - 0.85 * this.vmax / (0.85 * R);
+      this.t = 0; this.hist = []; this.sampleT = 0; this.events = 0; this.biggest = 0; this.inEvent = false; this.eventPeak = 0;
+      this.trend0 = this.Oc;
+    },
+    omegaS() { let s = 0; const R2 = this.R * this.R; for (let i = 0; i < this.n; i++) s += R2 - (this.X[i] ** 2 + this.Y[i] ** 2); return 2 * s / (R2 * R2); },
+    V0() { return this.vmax / (this.xi * Math.exp(-0.5)); },
+    vel(X, Y, U, Vv) {
+      const n = this.n, R2 = this.R * this.R;
+      for (let i = 0; i < n; i++) { U[i] = 0; Vv[i] = 0; }
+      for (let i = 0; i < n; i++) {
+        const xi = X[i], yi = Y[i], r2i = xi * xi + yi * yi, img = r2i > 1e-8, xim = img ? xi * R2 / r2i : 0, yim = img ? yi * R2 / r2i : 0;
+        for (let j = 0; j < n; j++) {
+          if (img) {  // image of i (circulation −1) acting on j; a vortex at the centre has its image at infinity
+            const dxm = X[j] - xim, dym = Y[j] - yim, d2m = dxm * dxm + dym * dym;
+            U[j] += dym / d2m; Vv[j] -= dxm / d2m;
+          }
+          if (j > i) { const dx = xi - X[j], dy = yi - Y[j], d2 = dx * dx + dy * dy + 1e-6; U[i] -= dy / d2; Vv[i] += dx / d2; U[j] += dy / d2; Vv[j] -= dx / d2; }
+        }
+      }
+      const V0 = this.V0(), a = this.a, s2 = 2 * this.xi * this.xi, cp = Math.cos(this.phi), sp = Math.sin(this.phi), Oc = this.Oc;
+      for (let i = 0; i < n; i++) {
+        let u = U[i] + Oc * Y[i], v = Vv[i] - Oc * X[i];
+        const dx = X[i] - a * Math.round(X[i] / a), dy = Y[i] - a * Math.round(Y[i] / a), g = V0 * Math.exp(-(dx * dx + dy * dy) / s2);
+        u += g * dy; v -= g * dx;
+        U[i] = u * cp + v * sp; Vv[i] = -u * sp + v * cp;
+      }
+    },
+    stepOnce(h) {
+      const n = this.n, X = this.X, Y = this.Y, k = this.k, tX = this.tX, tY = this.tY, R2 = this.R * this.R;
+      const Os0 = this.omegaS();
+      this.Oc += this.Next * h;
+      this.vel(X, Y, k[0], k[1]);
+      for (let i = 0; i < n; i++) this.spd[i] = Math.hypot(k[0][i], k[1][i]);
+      for (let i = 0; i < n; i++) { tX[i] = X[i] + 0.5 * h * k[0][i]; tY[i] = Y[i] + 0.5 * h * k[1][i]; }
+      this.vel(tX, tY, k[2], k[3]);
+      for (let i = 0; i < n; i++) { tX[i] = X[i] + 0.5 * h * k[2][i]; tY[i] = Y[i] + 0.5 * h * k[3][i]; }
+      this.vel(tX, tY, k[4], k[5]);
+      for (let i = 0; i < n; i++) { tX[i] = X[i] + h * k[4][i]; tY[i] = Y[i] + h * k[5][i]; }
+      this.vel(tX, tY, k[6], k[7]);
+      for (let i = 0; i < n; i++) { X[i] += h / 6 * (k[0][i] + 2 * k[2][i] + 2 * k[4][i] + k[6][i]); Y[i] += h / 6 * (k[1][i] + 2 * k[3][i] + 2 * k[5][i] + k[7][i]); }
+      let m = 0;  // vortices reaching the wall annihilate with their images
+      for (let i = 0; i < n; i++) if (X[i] * X[i] + Y[i] * Y[i] < R2) { X[m] = X[i]; Y[m] = Y[i]; this.spd[m] = this.spd[i]; this.trails[m] = this.trails[i]; m++; }
+      for (let i = m; i < n; i++) this.trails[i] = [];
+      this.n = m;
+      const Os1 = this.omegaS();
+      this.Oc -= this.Irel * (Os1 - Os0);  // feedback: the crust gains what the superfluid loses
+      this.Os = Os1; this.t += h;
+    },
+    unpinned() { let c = 0; const th = 0.3 * this.vmax; for (let i = 0; i < this.n; i++) if (this.spd[i] > th) c++; return c; },
+    step(dt) {
+      if (!this.ready) this.init();
+      const h = Math.min(0.01, 0.9 / this.V0()), simT = dt * this.rate;
+      const steps = Math.max(1, Math.min(8, Math.round(simT / h)));
+      for (let s = 0; s < steps; s++) this.stepOnce(h);
+      const u = this.unpinned();
+      for (let i = 0; i < this.n; i++) {  // short trails for moving vortices
+        const tr = this.trails[i];
+        if (this.spd[i] > 0.3 * this.vmax) { tr.push(this.X[i], this.Y[i]); if (tr.length > 40) tr.splice(0, 2); }
+        else if (tr.length) tr.splice(0, 2);
+      }
+      if (this.t < this.settle) return;  // vortices first settle into their pins; don't count or plot that
+      // avalanche bookkeeping: an event is a run with at least 4 vortices unpinned at once
+      if (u >= 4) { if (!this.inEvent) { this.inEvent = true; this.events++; this.eventPeak = 0; } this.eventPeak = Math.max(this.eventPeak, u); this.biggest = Math.max(this.biggest, u); }
+      else if (u <= 1) this.inEvent = false;
+      if ((this.sampleT += steps * h) >= 0.1) {
+        this.sampleT = 0;
+        this.hist.push([this.t, this.n, u, this.Oc]);
+        if (this.hist.length > 700) this.hist.shift();
+      }
+      if (this.n < 150) this.reset();
+    },
+    layout() {
+      const wide = W / H > 1.3;
+      const size = wide ? Math.min(H - 8, W * 0.55) : Math.min(W - 8, H * 0.55);
+      const cw = wide ? Math.min(330, W - size - 50) : W - 16;
+      this.view = { cx: wide ? Math.max(4, (W - size - cw - 36) / 2) + size / 2 : W / 2, cy: 4 + size / 2, r: size / 2 - 4,
+        chart: wide ? { x: Math.max(4, (W - size - cw - 36) / 2) + size + 36, y: 8, w: cw, h: H - 16 } : { x: 8, y: size + 16, w: cw, h: H - size - 20 } };
+      this.pinCache = null;
+    },
+    pins() {  // pinning lattice, prerendered
+      const v = this.view, c = document.createElement("canvas"), dpr2 = Math.min(window.devicePixelRatio || 1, 2);
+      c.width = Math.ceil(2 * (v.r + 2) * dpr2); c.height = c.width;
+      const g = c.getContext("2d"); g.scale(dpr2, dpr2); g.fillStyle = "rgba(107,119,131,0.18)";
+      const s = v.r / this.R, n = Math.floor(this.R / this.a);
+      for (let j = -n; j <= n; j++) for (let i = -n; i <= n; i++) {
+        const x = i * this.a, y = j * this.a; if (x * x + y * y > this.R * this.R) continue;
+        g.fillRect(v.r + 2 + x * s - 0.6, v.r + 2 - y * s - 0.6, 1.2, 1.2);
+      }
+      this.pinCache = c;
+    },
+    draw() {
+      if (!this.ready) this.init();
+      ctx.clearRect(0, 0, W, H);
+      const v = this.view, s = v.r / this.R;
+      if (!this.pinCache) this.pins();
+      ctx.drawImage(this.pinCache, v.cx - v.r - 2, v.cy - v.r - 2, this.pinCache.width / Math.min(window.devicePixelRatio || 1, 2), this.pinCache.height / Math.min(window.devicePixelRatio || 1, 2));
+      ctx.strokeStyle = col.ink; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(v.cx, v.cy, v.r, 0, TAU); ctx.stroke();
+      // trails of moving vortices
+      ctx.strokeStyle = "rgba(178,24,43,0.35)"; ctx.lineWidth = 1.2; ctx.beginPath();
+      for (let i = 0; i < this.n; i++) { const tr = this.trails[i]; for (let q = 0; q + 3 < tr.length; q += 2) { ctx.moveTo(v.cx + tr[q] * s, v.cy - tr[q + 1] * s); ctx.lineTo(v.cx + tr[q + 2] * s, v.cy - tr[q + 3] * s); } }
+      ctx.stroke();
+      // vortices: pinned grey, unpinned red
+      const th = 0.3 * this.vmax, rr = Math.max(2, v.r / 70);
+      for (const [moving, colour, r] of [[false, col.muted, rr], [true, col.neg, rr * 1.4]]) {
+        ctx.fillStyle = colour; ctx.beginPath();
+        for (let i = 0; i < this.n; i++) if ((this.spd[i] > th) === moving) { const x = v.cx + this.X[i] * s, y = v.cy - this.Y[i] * s; ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, TAU); }
+        ctx.fill();
+      }
+      this.drawCharts(v.chart);
+    },
+    drawCharts(c) {
+      const H3 = this.hist; if (H3.length < 2) return;
+      const gap = 12, rowH = (c.h - 2 * gap) / 3, t0 = H3[0][0], t1 = H3[H3.length - 1][0], span = Math.max(30, t1 - t0);
+      const X = (t) => c.x + ((t - (t1 - span)) / span) * c.w;
+      // container spin with the imposed spin-down trend removed (a least-squares line over the window)
+      let st = 0, so = 0, stt = 0, sto = 0; for (const [t, , , o] of H3) { st += t; so += o; stt += t * t; sto += t * o; }
+      const m = H3.length, slope = (m * sto - st * so) / (m * stt - st * st || 1), icpt = (so - slope * st) / m;
+      const rows = [
+        { lab: "Unpinned vortices", get: (r) => r[2], colour: col.neg, zero: true },
+        { lab: "Vortices in the star", get: (r) => r[1], colour: col.ink },
+        { lab: "Crust spin, trend removed", get: (r) => r[3] - (slope * r[0] + icpt), colour: col.pos },
+      ];
+      rows.forEach((row, k) => {
+        const top = c.y + k * (rowH + gap), bot = top + rowH - 4, vals = H3.map(row.get);
+        let lo = row.zero ? 0 : Math.min(...vals), hi = Math.max(...vals); if (hi - lo < 1e-9) hi = lo + 1;
+        const pad = row.zero ? 0 : 0.08 * (hi - lo); lo -= pad; hi += pad;
+        const Y = (q) => bot - ((q - lo) / (hi - lo)) * (bot - top - 16);
+        ctx.fillStyle = col.ink; ctx.font = "12px Newsreader, Georgia, serif"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+        ctx.fillText(row.lab, c.x, top + 11);
+        ctx.fillStyle = col.muted; ctx.textAlign = "right";
+        ctx.fillText(k === 2 ? "" : String(Math.round(vals[vals.length - 1])), c.x + c.w, top + 11); ctx.textAlign = "left";
+        ctx.strokeStyle = col.rule; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(c.x, bot + 0.5); ctx.lineTo(c.x + c.w, bot + 0.5); ctx.stroke();
+        ctx.strokeStyle = row.colour; ctx.lineWidth = 1.4; ctx.beginPath();
+        H3.forEach((r, i) => { const x = X(r[0]), y = Y(row.get(r)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+        ctx.stroke();
+      });
+      ctx.fillStyle = col.muted; ctx.font = "italic 11px Newsreader, Georgia, serif"; ctx.textAlign = "right";
+      ctx.fillText(`last ${Math.round(span)} time units`, c.x + c.w, c.y + c.h); ctx.textAlign = "left";
+    },
+    click() {},
+    status() {
+      if (!this.ready) return "Setting up the vortex array";
+      if (this.t < this.settle) return "Vortices settling into their pinning sites";
+      return `${this.n} vortices; ${this.events} avalanche${this.events === 1 ? "" : "s"} so far, largest ${this.biggest} vortices unpinned at once`;
+    },
+  };
+
+  const sims = { vortices: Vort, forest: Forest, diffusion: Diff, gyro: Gyro, kelvin: Kelvin, bec: BEC, neo: Neo, glitch: Glitch };
 
   /* ------------------------------------------------------------------ plumbing */
   function resize() {
@@ -1525,7 +1712,7 @@
     W = Math.max(1, r.width); H = Math.max(1, r.height);
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    Vort.layout(); Forest.layout(); Diff.layout(); Gyro.layout(); Kelvin.layout(); BEC.layout(); Neo.layout();
+    Vort.layout(); Forest.layout(); Diff.layout(); Gyro.layout(); Kelvin.layout(); BEC.layout(); Neo.layout(); Glitch.layout();
     render();
   }
   let lastStatus = "";
@@ -1553,6 +1740,7 @@
       vortices: "Animation of point vortices moving inside a circular container",
       forest: "Animation of a disease spreading through a planted forest, with a graph of susceptible, infected and removed trees",
       diffusion: "Animation in three panels: an outbreak and a sparse survey of it; a diffusion model turning noise into a map of transmission; and the true transmission map",
+      glitch: "Hundreds of pinned superfluid vortices in a rotating disc, some unpinning together in avalanches, with graphs of unpinned vortices, vortex number and crust spin over time",
       neo: "Map of Europe showing farming spreading from the Near East over several thousand years, faster along coasts and the Danube and Rhine, with a table of modelled and approximate arrival dates",
       bec: "Density of a two-dimensional dipolar Bose–Einstein condensate in a harmonic trap, which can be stirred with a laser beam, with a graph of its excitation spectrum",
       kelvin: "A single vortex line rippling with helical Kelvin waves, with a graph of its energy spectrum against wavenumber",
@@ -1594,6 +1782,8 @@
   canvas.addEventListener("pointerup", endDrag);
   canvas.addEventListener("pointercancel", endDrag);
   const phiIn = root.querySelector("#phi"), phiOut = root.querySelector("#phi-out");
+  const pinIn = root.querySelector("#vpin"), pinOut = root.querySelector("#vpin-out");
+  pinIn.addEventListener("input", () => { Glitch.vmax = +pinIn.value; pinOut.textContent = (+pinIn.value).toFixed(2); render(); });
   const neoIn = root.querySelector("#kneo"), neoOut = root.querySelector("#kneo-out");
   let neoPending = false;
   neoIn.addEventListener("input", () => {
