@@ -33,7 +33,7 @@
   const TAU = Math.PI * 2;
 
   let W = 0, H = 0, dpr = 1;
-  let mode = ["vortices", "forest", "diffusion", "gyro", "kelvin", "bec"][Math.floor(Math.random() * 6)];
+  let mode = ["vortices", "forest", "diffusion", "gyro", "kelvin", "bec", "neo"][Math.floor(Math.random() * 7)];
   let paused = reduceMotion, visible = true, last = 0, raf = 0;
 
   /* ------------------------------------------------------------------ vortices */
@@ -1309,7 +1309,214 @@
     },
   };
 
-  const sims = { vortices: Vort, forest: Forest, diffusion: Diff, gyro: Gyro, kelvin: Kelvin, bec: BEC };
+  /* ------------------------------------------------------------------ Neolithic spread */
+  /*
+   * A wavefront model of the spread of farming across Europe, in the spirit of Baggaley et al., Phys. Rev. E 86,
+   * 016105 (2012) and Henderson et al., Antiquity 88, 1291 (2014). The arrival time T(x) solves |∇T| = 1/c(x) and is
+   * computed with Dijkstra's algorithm on a 16-neighbour stencil over a 0.2° grid built from Natural Earth (public
+   * domain): speed c₀ inland and k c₀ along coasts, short sea crossings and the Danube and Rhine. For each k the inland
+   * speed and start date are fitted by least squares to approximate first-farming dates at eight places (TARGETS), so
+   * the error of the fit can be compared across k. The dates are rough consensus values for illustration only.
+   */
+  const NEO_TARGETS = [
+    ["Thessaly", 22.4, 39.6, 6500], ["Hungarian plain", 19.5, 47.0, 5700], ["Rhineland", 7.5, 50.5, 5300], ["Paris basin", 2.5, 48.8, 5000],
+    ["Valencia coast", -0.4, 39.4, 5500], ["Southern England", 0.0, 51.3, 4000], ["Southern Scandinavia", 10.5, 56.0, 4000], ["Ireland", -7.5, 53.3, 3750]];
+  const NEO_OFF = [[1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1], [2, 1], [1, 2], [-1, 2], [-2, 1], [-2, -1], [-1, -2], [1, -2], [2, -1]];
+  const Neo = {
+    k: 3, origin: [37.5, 36.6], endYear: 3000, yearsPerSec: 320, hold: 3,
+    ready: false, loading: false, failed: false, year: 8000, holdT: 0, view: null,
+
+    load() {
+      if (this.loading || this.ready) return;
+      this.loading = true;
+      fetch(root.dataset.neoSrc).then((r) => r.json()).then((g) => {
+        this.geo = g; this.setup(); this.ready = true; render();
+      }).catch(() => { this.failed = true; render(); });
+    },
+    setup() {
+      const g = this.geo, NC = g.nx * g.ny, bin = atob(g.grid);
+      this.cls = new Uint8Array(NC);
+      for (let i = 0; i < NC; i++) this.cls[i] = (bin.charCodeAt(i >> 2) >> ((i & 3) * 2)) & 3;
+      const dec = (arr) => { const pts = []; let x = 0, y = 0; for (let i = 0; i < arr.length; i += 2) { x += arr[i]; y += arr[i + 1]; pts.push([x / 100, y / 100]); } return pts; };
+      this.landPolys = g.land.map(dec); this.riverLines = g.rivers.map(dec);
+      this.off = document.createElement("canvas"); this.off.width = g.nx; this.off.height = g.ny;
+      this.offCtx = this.off.getContext("2d"); this.img = this.offCtx.createImageData(g.nx, g.ny);
+      this.cellOf = (lon, lat) => Math.floor((g.lat1 - lat) / g.res) * g.nx + Math.floor((lon - g.lon0) / g.res);
+      this.layout(); this.compute();
+      this.year = paused ? this.endYear : this.start;
+    },
+    solve(k) {  // arrival time in years for c₀ = 1 km/yr
+      const g = this.geo, nx = g.nx, ny = g.ny, NC = nx * ny, cls = this.cls, res = g.res;
+      const speed = new Float64Array(NC);
+      for (let i = 0; i < NC; i++) speed[i] = cls[i] === 0 ? 0 : cls[i] === 1 ? 1 : k;
+      const T = new Float64Array(NC).fill(Infinity), done = new Uint8Array(NC), hv = [], hc = [];
+      const push = (t, c) => { hv.push(t); hc.push(c); let i = hv.length - 1; while (i) { const p = (i - 1) >> 1; if (hv[p] <= hv[i]) break; [hv[p], hv[i]] = [hv[i], hv[p]]; [hc[p], hc[i]] = [hc[i], hc[p]]; i = p; } };
+      const pop = () => {
+        const t = hv[0], c = hc[0], lt = hv.pop(), lc = hc.pop();
+        if (hv.length) { hv[0] = lt; hc[0] = lc; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < hv.length && hv[l] < hv[m]) m = l; if (r < hv.length && hv[r] < hv[m]) m = r; if (m === i) break; [hv[m], hv[i]] = [hv[i], hv[m]]; [hc[m], hc[i]] = [hc[i], hc[m]]; i = m; } }
+        return [t, c];
+      };
+      const o = this.cellOf(...this.origin); T[o] = 0; push(0, o);
+      while (hv.length) {
+        const [t, c] = pop(); if (done[c]) continue; done[c] = 1;
+        const i = c % nx, j = (c / nx) | 0, lat = g.lat1 - (j + 0.5) * res;
+        const kx = 111.32 * Math.cos(lat * Math.PI / 180) * res, ky = 110.57 * res;
+        for (const [dx, dy] of NEO_OFF) {
+          const ii = i + dx, jj = j + dy; if (ii < 0 || jj < 0 || ii >= nx || jj >= ny) continue;
+          const n = jj * nx + ii; if (done[n] || speed[n] === 0) continue;
+          const tn = t + Math.hypot(dx * kx, dy * ky) * 0.5 * (1 / speed[c] + 1 / speed[n]);
+          if (tn < T[n]) { T[n] = tn; push(tn, n); }
+        }
+      }
+      return T;
+    },
+    compute() {
+      const T = this.solve(this.k), xs = NEO_TARGETS.map(([, lo, la]) => T[this.cellOf(lo, la)]), ys = NEO_TARGETS.map((t) => t[3]);
+      const n = xs.length, mx = xs.reduce((a, b) => a + b) / n, my = ys.reduce((a, b) => a + b) / n;
+      let sxy = 0, sxx = 0; for (let i = 0; i < n; i++) { sxy += (xs[i] - mx) * (ys[i] - my); sxx += (xs[i] - mx) ** 2; }
+      const a = -sxy / sxx; this.c0 = 1 / a; this.start = my + a * mx;
+      this.model = xs.map((x) => this.start - a * x);
+      this.rms = Math.sqrt(this.model.reduce((s, m, i) => s + (m - ys[i]) ** 2, 0) / n);
+      this.B = new Float64Array(T.length);  // arrival date, years BC (larger = earlier)
+      for (let i = 0; i < T.length; i++) this.B[i] = isFinite(T[i]) ? this.start - a * T[i] : -Infinity;
+      this.contours = this.isochrones([7000, 6000, 5000, 4000]);
+    },
+    isochrones(levels) {  // marching squares on the arrival-date field, in grid coordinates
+      const g = this.geo, nx = g.nx, ny = g.ny, B = this.B, out = [];
+      for (const L of levels) {
+        const segs = [];
+        for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+          const v = [B[j * nx + i], B[j * nx + i + 1], B[(j + 1) * nx + i + 1], B[(j + 1) * nx + i]];
+          if (v.some((q) => !isFinite(q))) continue;
+          const p = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]], cross = [];
+          for (let e = 0; e < 4; e++) {
+            const a = v[e], b = v[(e + 1) % 4];
+            if ((a - L) * (b - L) < 0) { const t = (L - a) / (b - a), A = p[e], Bp = p[(e + 1) % 4]; cross.push([A[0] + t * (Bp[0] - A[0]), A[1] + t * (Bp[1] - A[1])]); }
+          }
+          if (cross.length >= 2) segs.push([cross[0], cross[1]]);
+          if (cross.length === 4) segs.push([cross[2], cross[3]]);
+        }
+        // label position: the segment nearest the middle of continental Europe
+        let lab = null, bd = Infinity;
+        for (const [a] of segs) { const lon = g.lon0 + (a[0] + 0.5) * g.res, lat = g.lat1 - (a[1] + 0.5) * g.res, d = (lon - 14) ** 2 + (lat - 47) ** 2; if (d < bd) { bd = d; lab = a; } }
+        out.push({ L, segs, lab });
+      }
+      return out;
+    },
+    reset() { if (this.ready) { this.year = this.start; this.holdT = 0; } },
+    step(dt) {
+      if (!this.ready) { this.load(); return; }
+      if (this.year > this.endYear) this.year = Math.max(this.endYear, this.year - this.yearsPerSec * dt);
+      else if ((this.holdT += dt) > this.hold) this.reset();
+    },
+    layout() {
+      if (!this.geo) return;
+      const g = this.geo, wide = W / H > 1.3, cosl = Math.cos(46 * Math.PI / 180);
+      const mapW = g.nx * g.res * cosl, mapH = g.ny * g.res;
+      const panelW = wide ? Math.min(250, W * 0.27) : 0, availW = W - panelW - (wide ? 24 : 0), availH = wide ? H - 4 : H * 0.62;
+      const s = Math.min(availW / mapW, availH / mapH);
+      const ox = wide ? (availW - mapW * s) / 2 : (W - mapW * s) / 2, oy = 2;
+      this.view = { s, cosl, ox, oy, w: mapW * s, h: mapH * s,
+        panel: wide ? { x: availW + 16, y: 8, w: panelW, h: H - 16 } : { x: 8, y: mapH * s + 12, w: W - 16, h: H - mapH * s - 16 } };
+    },
+    px(lon, lat) { const v = this.view, g = this.geo; return [v.ox + (lon - g.lon0) * v.cosl * v.s, v.oy + (g.lat1 - lat) * v.s]; },
+    colour(b) {  // arrival date → earthy sequential palette (early dark, late pale)
+      const t = Math.min(1, Math.max(0, (this.start - b) / (this.start - this.endYear)));
+      const stops = [[102, 37, 6], [153, 52, 4], [204, 76, 2], [236, 112, 20], [254, 153, 41], [254, 196, 79], [254, 227, 145]];
+      const f = t * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(f)), u = f - i, A = stops[i], Bc = stops[i + 1];
+      return [A[0] + u * (Bc[0] - A[0]), A[1] + u * (Bc[1] - A[1]), A[2] + u * (Bc[2] - A[2])];
+    },
+    landPath() {
+      ctx.beginPath();
+      for (const poly of this.landPolys) poly.forEach(([lo, la], i) => { const [x, y] = this.px(lo, la); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    },
+    draw() {
+      ctx.clearRect(0, 0, W, H);
+      if (!this.ready) {
+        ctx.fillStyle = col.muted; ctx.font = "italic 15px Newsreader, Georgia, serif"; ctx.textAlign = "center";
+        ctx.fillText(this.failed ? "The map could not be loaded." : "Loading the map…", W / 2, H / 2); ctx.textAlign = "left";
+        return;
+      }
+      if (!this.view) this.layout();
+      const g = this.geo, v = this.view, d = this.img.data, B = this.B, yr = this.year;
+      // land
+      this.landPath(); ctx.fillStyle = col.wash; ctx.fill();
+      // farmed region, coloured by arrival date, clipped to the coastline
+      for (let i = 0; i < B.length; i++) {
+        const b = B[i], on = b >= yr ? Math.min(1, (b - yr) / 120 + 0.35) : 0;
+        if (on > 0) { const [r, gg, bb] = this.colour(b); d[4 * i] = r; d[4 * i + 1] = gg; d[4 * i + 2] = bb; d[4 * i + 3] = 230 * on; } else d[4 * i + 3] = 0;
+      }
+      this.offCtx.putImageData(this.img, 0, 0);
+      ctx.save(); this.landPath(); ctx.clip();
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(this.off, v.ox, v.oy, g.nx * g.res * v.cosl * v.s, g.ny * g.res * v.s);
+      // isochrones already passed
+      ctx.strokeStyle = "rgba(60,30,10,0.55)"; ctx.lineWidth = 0.9;
+      const gx = (p) => this.px(g.lon0 + (p[0] + 0.5) * g.res, g.lat1 - (p[1] + 0.5) * g.res);
+      for (const c of this.contours) {
+        if (c.L < yr) continue;
+        ctx.beginPath(); for (const [a, b] of c.segs) { const A = gx(a), Bp = gx(b); ctx.moveTo(A[0], A[1]); ctx.lineTo(Bp[0], Bp[1]); } ctx.stroke();
+      }
+      ctx.restore();
+      ctx.font = "italic 11px Newsreader, Georgia, serif"; ctx.fillStyle = "rgb(60,30,10)"; ctx.textAlign = "center";
+      for (const c of this.contours) if (c.L >= yr && c.lab) { const [x, y] = gx(c.lab); ctx.fillText(`${c.L} BC`, x, y - 3); }
+      ctx.textAlign = "left";
+      // coastline (skipping the straight edges where land was clipped to the map frame) and the two rivers
+      const e = 0.02, lonMax = g.lon0 + g.nx * g.res, latMin = g.lat1 - g.ny * g.res;
+      const onEdge = ([lo, la]) => lo < g.lon0 + e || lo > lonMax - e || la > g.lat1 - e || la < latMin + e;
+      ctx.beginPath();
+      for (const poly of this.landPolys) for (let i = 1; i < poly.length; i++) {
+        if (onEdge(poly[i - 1]) && onEdge(poly[i])) continue;
+        const [x0, y0] = this.px(...poly[i - 1]), [x1, y1] = this.px(...poly[i]); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1);
+      }
+      ctx.strokeStyle = "rgba(107,119,131,0.6)"; ctx.lineWidth = 0.7; ctx.stroke();
+      ctx.strokeStyle = this.k > 1 ? col.pos : "rgba(67,147,195,0.45)"; ctx.lineWidth = this.k > 1 ? 1.6 : 1;
+      for (const line of this.riverLines) { ctx.beginPath(); line.forEach(([lo, la], i) => { const [x, y] = this.px(lo, la); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke(); }
+      // places used for calibration
+      NEO_TARGETS.forEach(([name, lo, la], i) => {
+        const [x, y] = this.px(lo, la), reached = this.model[i] >= yr;
+        ctx.beginPath(); ctx.arc(x, y, 3, 0, TAU); ctx.fillStyle = reached ? col.ink : "#fff"; ctx.fill(); ctx.strokeStyle = col.ink; ctx.lineWidth = 1; ctx.stroke();
+      });
+      const [ox, oy] = this.px(...this.origin);
+      ctx.fillStyle = col.neg; ctx.beginPath(); ctx.arc(ox, oy, 4, 0, TAU); ctx.fill();
+      this.drawPanel(v.panel);
+    },
+    drawPanel(p) {
+      const yr = Math.round(this.year / 10) * 10, wide = p.h > 200;
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = col.ink; ctx.font = `${wide ? 30 : 24}px Newsreader, Georgia, serif`;
+      ctx.fillText(`${yr} BC`, p.x, p.y + (wide ? 28 : 22));
+      // colour bar
+      const by = p.y + (wide ? 44 : 34), bw = Math.min(p.w, 230), g = ctx.createLinearGradient(p.x, 0, p.x + bw, 0);
+      for (let i = 0; i <= 10; i++) { const [r, gg, b] = this.colour(this.start - (i / 10) * (this.start - this.endYear)); g.addColorStop(i / 10, `rgb(${r},${gg},${b})`); }
+      ctx.fillStyle = g; ctx.fillRect(p.x, by, bw, 8);
+      ctx.fillStyle = col.muted; ctx.font = "italic 12px Newsreader, Georgia, serif";
+      ctx.fillText(`${Math.round(this.start / 100) * 100} BC`, p.x, by + 22); ctx.textAlign = "right"; ctx.fillText(`${this.endYear} BC`, p.x + bw, by + 22); ctx.textAlign = "left";
+      // fit summary and arrival table
+      let y = by + (wide ? 46 : 40);
+      ctx.fillStyle = col.ink; ctx.font = "13px Newsreader, Georgia, serif";
+      ctx.fillText(`Inland ${this.c0.toFixed(2)} km/yr, waterways ${this.k}×`, p.x, y); y += 17;
+      ctx.fillStyle = col.neg; ctx.fillText(`Fit error ±${Math.round(this.rms)} years`, p.x, y); y += wide ? 24 : 18;
+      if (!wide && p.h < 150) return;
+      ctx.font = "12px Newsreader, Georgia, serif";
+      ctx.fillStyle = col.muted; ctx.fillText("Arrival", p.x, y); ctx.textAlign = "right"; ctx.fillText("model", p.x + bw - 52, y); ctx.fillText("approx.", p.x + bw, y); ctx.textAlign = "left"; y += 16;
+      NEO_TARGETS.forEach(([name, , , dte], i) => {
+        const reached = this.model[i] >= this.year;
+        ctx.fillStyle = reached ? col.ink : col.muted;
+        ctx.fillText(name, p.x, y); ctx.textAlign = "right";
+        ctx.fillText(reached ? `${Math.round(this.model[i] / 50) * 50}` : "·", p.x + bw - 52, y);
+        ctx.fillStyle = col.muted; ctx.fillText(String(dte), p.x + bw, y); ctx.textAlign = "left"; y += 15;
+      });
+    },
+    setK(k) { this.k = k; if (this.ready) { const y = this.year; this.compute(); this.year = Math.min(this.start, y); } },
+    click() {},
+    status() {
+      if (!this.ready) return this.failed ? "Map unavailable" : "Loading the map";
+      return `${Math.round(this.year / 10) * 10} BC. Waterways ${this.k}× faster than inland; fit error ±${Math.round(this.rms)} years`;
+    },
+  };
+
+  const sims = { vortices: Vort, forest: Forest, diffusion: Diff, gyro: Gyro, kelvin: Kelvin, bec: BEC, neo: Neo };
 
   /* ------------------------------------------------------------------ plumbing */
   function resize() {
@@ -1318,7 +1525,7 @@
     W = Math.max(1, r.width); H = Math.max(1, r.height);
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    Vort.layout(); Forest.layout(); Diff.layout(); Gyro.layout(); Kelvin.layout(); BEC.layout();
+    Vort.layout(); Forest.layout(); Diff.layout(); Gyro.layout(); Kelvin.layout(); BEC.layout(); Neo.layout();
     render();
   }
   let lastStatus = "";
@@ -1338,6 +1545,7 @@
   function setMode(m) {
     mode = m; last = 0; root.dataset.mode = m;
     if (m === "kelvin" && !Kelvin.ready) { Kelvin.init(); if (paused) Kelvin.advance(400); }
+    if (m === "neo") Neo.load();
     if (m === "bec" && !BEC.ready) { BEC.init(); if (paused) BEC.advance(500); }
     root.querySelectorAll(".sim-tabs button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
     root.querySelectorAll("[data-for]").forEach((el) => { el.hidden = el.dataset.for !== m; });
@@ -1345,6 +1553,7 @@
       vortices: "Animation of point vortices moving inside a circular container",
       forest: "Animation of a disease spreading through a planted forest, with a graph of susceptible, infected and removed trees",
       diffusion: "Animation in three panels: an outbreak and a sparse survey of it; a diffusion model turning noise into a map of transmission; and the true transmission map",
+      neo: "Map of Europe showing farming spreading from the Near East over several thousand years, faster along coasts and the Danube and Rhine, with a table of modelled and approximate arrival dates",
       bec: "Density of a two-dimensional dipolar Bose–Einstein condensate in a harmonic trap, which can be stirred with a laser beam, with a graph of its excitation spectrum",
       kelvin: "A single vortex line rippling with helical Kelvin waves, with a graph of its energy spectrum against wavenumber",
       gyro: "Rotating three-dimensional view of swimming cells in a periodic flow, gathering into vertical plumes, with a small graph of the Lyapunov exponent against swimming speed",
@@ -1385,6 +1594,14 @@
   canvas.addEventListener("pointerup", endDrag);
   canvas.addEventListener("pointercancel", endDrag);
   const phiIn = root.querySelector("#phi"), phiOut = root.querySelector("#phi-out");
+  const neoIn = root.querySelector("#kneo"), neoOut = root.querySelector("#kneo-out");
+  let neoPending = false;
+  neoIn.addEventListener("input", () => {
+    neoOut.textContent = (+neoIn.value === 1 ? "none" : (+neoIn.value) + "×");
+    if (neoPending) return;
+    neoPending = true;
+    requestAnimationFrame(() => { neoPending = false; Neo.setK(+neoIn.value); render(); });  // one re-solve per frame at most
+  });
   const eddIn = root.querySelector("#edd"), eddOut = root.querySelector("#edd-out");
   eddIn.addEventListener("input", () => { eddOut.textContent = (+eddIn.value).toFixed(2); BEC.setEps(+eddIn.value); render(); });
   const forceIn = root.querySelector("#kforce"), forceOut = root.querySelector("#kforce-out");

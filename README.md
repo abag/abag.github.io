@@ -123,6 +123,16 @@ File names are case-sensitive on GitHub (`Tree_snap.png` is not `tree_snap.png`)
   The inset is the homogeneous Bogoliubov spectrum at the density-weighted mean density of the cloud, including the
   LHY term; a red dot marks a roton minimum and red shading an instability. The display shows the central 78% of the box.
 
+- **Spread of farming.** A wavefront model of the Neolithic spread across Europe: the arrival time T solves
+  |∇T| = 1/c(x), computed with Dijkstra's algorithm on a 16-neighbour stencil over a 0.2° grid (about 20 km).
+  Speed is c₀ inland and k·c₀ along a coastal band, sea within about 40 km of land (short crossings) and the Danube and
+  Rhine. For each k (the slider) the inland speed and start date are fitted by least squares to approximate
+  first-farming dates at eight places (`NEO_TARGETS` in `hero.js`; rough consensus values for illustration, worth
+  checking or replacing). The fit error is smallest near k ≈ 3 (about ±390 years, against ±585 for k = 1), with
+  c₀ ≈ 0.5 km/yr and a start near 7850 BC; origin in the northern Levant (37.5°E, 36.6°N). The map grid and outlines
+  in `static/data/neo_geo.json` (28 KB, loaded only when this tab is opened) were built from Natural Earth 1:50m land
+  and rivers, which are in the public domain (naturalearthdata.com).
+
 Parameters are at the top of each object in the file. Animations pause when off-screen, and start paused for
 visitors who have asked their system to reduce motion.
 

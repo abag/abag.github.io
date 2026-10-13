@@ -3,7 +3,7 @@
     <h1 id="hero-name">{{ site.Title }}</h1>
     <p class="role">{{ site.Params.role }}, Lancaster University</p>
   </div>
-  <figure class="hero-sim wrap" data-sim-root>
+  <figure class="hero-sim wrap" data-sim-root data-neo-src="{{ "data/neo_geo.json" | relURL }}">
     <div class="sim-stage">
       <canvas id="sim" role="img" aria-label="Animated simulation; see the caption below"></canvas>
     </div>
@@ -16,6 +16,7 @@
         <button type="button" data-mode="gyro" aria-pressed="false"><span class="swatch swatch-gyro" aria-hidden="true"></span>Swimming cells</button>
         <button type="button" data-mode="kelvin" aria-pressed="false"><span class="swatch swatch-kw" aria-hidden="true"></span>Kelvin waves</button>
         <button type="button" data-mode="bec" aria-pressed="false"><span class="swatch swatch-bec" aria-hidden="true"></span>Dipolar BEC</button>
+        <button type="button" data-mode="neo" aria-pressed="false"><span class="swatch swatch-neo" aria-hidden="true"></span>Spread of farming</button>
       </div>
       <p class="sim-caption" data-for="vortices">
         Point vortices of both signs in a disc, each mirrored by an image vortex beyond the wall.
@@ -55,6 +56,16 @@
         to watch the cascade decay, or pluck the vortex as a reconnection would. Drag to rotate.
         <span class="sim-refs"><a href="{{ "research/quantum-fluids/" | relURL }}">Quantum fluids research</a>, <a href="https://doi.org/10.1103/PhysRevB.89.014504">2014 paper</a>, <a href="https://physics.aps.org/articles/v19/118">Viewpoint in <i>Physics</i></a></span>
       </p>
+        <p class="sim-caption" data-for="neo" hidden>
+          The spread of farming from the Near East across Europe, as a wavefront model in the spirit of our
+          statistical studies of the Neolithic. The front moves at one speed inland and faster along coasts, short sea
+          crossings and the Danube–Rhine corridor (blue). For each choice of waterway speed-up, the inland speed and
+          start date are fitted to approximate first-farming dates at eight places (dots), and the fit is best when
+          waterways are about three times faster. The remaining misfit is telling: the model is too slow along the
+          western Mediterranean, where seafaring pioneers moved fastest, and too quick into Britain and Scandinavia,
+          where the spread paused.
+          <span class="sim-refs"><a href="{{ "research/math-biology/" | relURL }}">Maths biology research</a>, <a href="https://doi.org/10.1103/PhysRevE.86.016105">wavefront model</a>, <a href="{{ "papers/henderson_antiquity.pdf" | relURL }}">coastlines and rivers</a></span>
+        </p>
         <p class="sim-caption" data-for="bec" hidden>
           A two-dimensional dipolar Bose–Einstein condensate in a harmonic trap, simulated with the extended
           Gross–Pitaevskii equation, which adds the Lee–Huang–Yang correction from quantum fluctuations. The dipoles
@@ -75,6 +86,9 @@
         <label data-for="gyro" hidden>Swimming speed <i>Φ</i>
           <input type="range" id="phi" min="0" max="3" step="0.05" value="1">
           <output for="phi" id="phi-out">1.00</output></label>
+        <label data-for="neo" hidden>Waterway speed-up
+          <input type="range" id="kneo" min="1" max="6" step="0.5" value="3">
+          <output for="kneo" id="kneo-out">3×</output></label>
         <label data-for="bec" hidden>Dipole strength <i>ε</i><sub>dd</sub>
           <input type="range" id="edd" min="0" max="2.4" step="0.05" value="0.5">
           <output for="edd" id="edd-out">0.50</output></label>
