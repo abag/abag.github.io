@@ -2,6 +2,12 @@
 # These were drafted from your CV: please check the dates and wording.
 - date: Oct 2026
   text: >-
+    Our paper with Jamie McKeown, Laura Wadkin, Nick Parker and Andrew Golightly,
+    [*Reaction-diffusion models of invasive tree pest spread: Quantifying the expansion of oak processionary moth in the UK*](https://doi.org/10.1016/j.mbs.2026.109824),
+    is out (open access) in **Mathematical Biosciences**. We infer the spread rate with Bayesian MCMC and find the
+    moth's expansion is not constant, probably because of variation in host trees and environment.
+- date: Oct 2026
+  text: >-
     Our new undergraduate programme, the
     [BSc in Mathematics, Artificial Intelligence and Real-world Systems](https://www.lancaster.ac.uk/study/undergraduate/courses/mathematics-artificial-intelligence-and-realworld-systems-mars-bsc-hons-g1i4/2026/),
     welcomes its first students. I am Director of Studies for the programme and teach the new first-year module

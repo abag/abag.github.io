@@ -20,6 +20,17 @@
   status: in submission
   type: misc
   key: dopson2026impacts
+- authors: [J. P. McKeown, L. E. Wadkin, N. G. Parker, A. Golightly, A. W. Baggaley]
+  title: 'Reaction-diffusion models of invasive tree pest spread: Quantifying the expansion of oak processionary moth in the UK'
+  year: 2026
+  venue: Mathematical Biosciences
+  volume: '402'
+  pages: '109824'
+  theme: bio
+  pdf: McKeown_OPM.pdf
+  doi: 10.1016/j.mbs.2026.109824
+  type: article
+  key: mckeown2026reactiondiffusion
 - authors: [A. W. Baggaley]
   title: The turbulent life of a vortex line
   year: 2026
