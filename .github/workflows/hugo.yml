@@ -40,7 +40,10 @@ jobs:
         env:
           HUGO_ENVIRONMENT: production
           TZ: Europe/London
-        run: hugo --gc --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
+        # "Last updated" in the footer is the month of the latest commit.
+        run: |
+          export HUGO_PARAMS_UPDATED="$(git log -1 --format=%cd --date=format:'%B %Y')"
+          hugo --gc --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
       - name: Upload
         uses: actions/upload-pages-artifact@v3
         with:
