@@ -42,6 +42,7 @@ http://localhost:1313. Pages reload as you edit.
 | Teaching, Bio | `content/teaching/_index.md`, `content/bio/_index.md`; replace `static/files/CV.pdf` for a new CV |
 | Email, phone, address, ORCID, Google Scholar, GitHub | `hugo.toml`, under `[params]` |
 | "Last updated" in the footer | `updated` in `hugo.toml` |
+| Condensate app (`/condensate/`) | `static/condensate/index.html`, a standalone page copied as-is (not built by Hugo), MIT-licensed (`LICENSE.txt` beside it). Add the arXiv link in its footer when the paper is out. |
 
 Commit and push; the site rebuilds itself.
 
