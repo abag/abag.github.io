@@ -43,3 +43,8 @@ disableKinds = ["taxonomy", "term", "RSS"]
     name = "Bio"
     pageRef = "/bio"
     weight = 5
+  # A standalone page in static/condensate/, not a Hugo page, so it uses url rather than pageRef.
+  [[menus.main]]
+    name = "Condensate"
+    url = "condensate/"
+    weight = 6

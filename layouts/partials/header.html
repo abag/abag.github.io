@@ -8,7 +8,7 @@
       <ul>
       {{- $cur := . }}
       {{- range site.Menus.main }}
-        <li><a href="{{ .URL }}"{{ if or ($cur.IsMenuCurrent "main" .) ($cur.HasMenuCurrent "main" .) (and .Page (eq $cur.Section .Page.Section) (not $cur.IsHome)) }} aria-current="page"{{ end }}>{{ .Name }}</a></li>
+        <li><a href="{{ if .Page }}{{ .URL }}{{ else }}{{ .URL | relURL }}{{ end }}"{{ if or ($cur.IsMenuCurrent "main" .) ($cur.HasMenuCurrent "main" .) (and .Page (eq $cur.Section .Page.Section) (not $cur.IsHome)) }} aria-current="page"{{ end }}>{{ .Name }}</a></li>
       {{- end }}
       </ul>
     </nav>
