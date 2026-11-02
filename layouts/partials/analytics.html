@@ -1,0 +1,4 @@
+{{- /* GoatCounter: cookie-free visit counts. Only in production builds, so `hugo server` previews are not counted. */ -}}
+{{- with site.Params.goatcounter }}{{ if hugo.IsProduction }}
+<script data-goatcounter="https://{{ . }}.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+{{- end }}{{ end }}

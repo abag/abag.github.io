@@ -44,4 +44,18 @@
       });
     }));
   }
+
+  // GoatCounter events: PDF downloads, links to other sites and animation tabs. Page views are counted by
+  // the GoatCounter script itself; this does nothing if it is absent (local previews) or blocked.
+  function event(path, title) {
+    if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path, title, event: true });
+  }
+  document.addEventListener("click", (e) => {
+    const tab = e.target.closest(".sim-tabs button");
+    if (tab) { event(`animation: ${tab.dataset.mode}`, tab.textContent.trim()); return; }
+    const a = e.target.closest("a[href]");
+    if (!a || a.protocol === "mailto:") return;
+    if (a.pathname.toLowerCase().endsWith(".pdf")) event(`pdf: ${a.pathname.split("/").pop()}`, a.textContent.trim());
+    else if (a.host !== location.host) event(`out: ${a.host}${a.pathname}`, a.textContent.trim());
+  });
 })();

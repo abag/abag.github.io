@@ -18,6 +18,9 @@ disableKinds = ["taxonomy", "term", "RSS"]
   scholar = ""
   github = ""
   updated = "October 2026"
+  # GoatCounter visitor statistics, dashboard at https://abaggaley.goatcounter.com. Leave empty to turn off.
+  # The standalone static/condensate/index.html has its own copy of the snippet.
+  goatcounter = "abaggaley"
 
 [markup.goldmark.renderer]
   unsafe = true
