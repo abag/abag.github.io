@@ -1,5 +1,15 @@
 # News items, newest first. `text` is Markdown. The home page shows the first four.
 # These were drafted from your CV: please check the dates and wording.
+- date: Nov 2026
+  text: >-
+    Two papers out (both open access). In **Physical Review Fluids**, with Peter Stasiak, Carlo Barenghi,
+    Giorgio Krstulovic and Luca Galantucci,
+    [*Inverse energy transfer in three-dimensional quantum vortex flows*](https://doi.org/10.1103/x7x3-v7sp)
+    shows that superfluid vortex reconnections inject energy into the normal fluid at small scales, which then
+    moves to larger scales and carries a net helicity. In the **Journal of the Royal Society Interface**,
+    [*Learning spatial transmission maps from sparse outbreak snapshots with diffusion models*](https://doi.org/10.1098/rsif.2026.0413)
+    uses conditional diffusion models to infer where a disease spreads fastest from a few partial snapshots of
+    an outbreak, even when over 80% of infections go unobserved ([code](https://github.com/abag/SIR_diffusion)).
 - date: Oct 2026
   text: >-
     Our paper with Jamie McKeown, Laura Wadkin, Nick Parker and Andrew Golightly,

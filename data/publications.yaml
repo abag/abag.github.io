@@ -3,16 +3,28 @@
 # theme (qf = quantum fluids, bio = maths biology), pdf (file in static/papers/),
 # arxiv, doi, url + url_label, status (e.g. "submitted"), selected (shown on home page),
 # type (article | incollection | misc), key (BibTeX key).
-#
-# TODO: add the J. R. Soc. Interface paper once you have the final author list, e.g.
-# - authors: [...]
-#   title: Learning spatial transmission maps from sparse outbreak snapshots with diffusion models
-#   venue: Journal of the Royal Society Interface
-#   year: 2026
-#   status: to appear
-#   theme: bio
-#   type: article
-#   key: ...
+- authors: [P. Z. Stasiak, C. F. Barenghi, A. W. Baggaley, G. Krstulovic, L. Galantucci]
+  title: Inverse energy transfer in three-dimensional quantum vortex flows
+  year: 2026
+  venue: Physical Review Fluids
+  volume: '11'
+  pages: L112701
+  theme: qf
+  doi: 10.1103/x7x3-v7sp
+  type: article
+  key: stasiak2026inverse
+- authors: [A. W. Baggaley]
+  title: Learning spatial transmission maps from sparse outbreak snapshots with diffusion models
+  year: 2026
+  venue: Journal of the Royal Society Interface
+  volume: '23'
+  pages: '20260413'
+  theme: bio
+  doi: 10.1098/rsif.2026.0413
+  url: https://github.com/abag/SIR_diffusion
+  url_label: Code
+  type: article
+  key: baggaley2026learning
 - authors: [M. Dopson, N. G. Parker, L. E. Wadkin, A. W. Baggaley, R. J. Pakeman, S. W. Smith, D. M. Evans]
   title: 'The impacts of grazing pressure by large herbivores on short-tailed field vole (Microtus agrestis) population cycles: results from a long-term upland experiment'
   year: 2026
